@@ -1,5 +1,5 @@
 -- Oishi Hub v1.02 - Private UI (LocalScript) with Auto-Execute
--- UPDATED: Dropdowns open outside UI for mobile compatibility
+-- UPDATED: Dropdowns open below button
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
@@ -633,7 +633,7 @@ local function CreateSlider(tabName, name, min, max, default, callback)
     return container
 end
 
--- Updated Dropdown that opens outside the UI
+-- Updated Dropdown that opens BELOW the button
 local function CreateDropdown(tabName, name, options, default, callback)
     local content = TabContents[tabName]
     if not content then return end
@@ -727,7 +727,7 @@ local function CreateDropdown(tabName, name, options, default, callback)
         popupStroke.Transparency = 0.2
         popupStroke.Parent = dropdownPopup
         
-        -- Position popup
+        -- Position popup BELOW the button
         local btnPos = button.AbsolutePosition
         local btnSize = button.AbsoluteSize
         local screenSize = Camera.ViewportSize
@@ -737,10 +737,11 @@ local function CreateDropdown(tabName, name, options, default, callback)
         local maxHeight = math.min(totalHeight, 300)
         
         local popupX = btnPos.X
-        local popupY = btnPos.Y + btnSize.Y + 5
+        local popupY = btnPos.Y + btnSize.Y + 5  -- Always below the button
         
-        -- Check if popup goes off screen
+        -- Check if popup goes off screen at the bottom
         if popupY + maxHeight > screenSize.Y - 10 then
+            -- If it goes off bottom, try to open above
             popupY = btnPos.Y - maxHeight - 5
         end
         
@@ -750,6 +751,10 @@ local function CreateDropdown(tabName, name, options, default, callback)
         
         if popupX < 10 then
             popupX = 10
+        end
+        
+        if popupY < 10 then
+            popupY = 10
         end
         
         dropdownPopup.Position = UDim2.new(0, popupX, 0, popupY)
@@ -2500,4 +2505,4 @@ SetupAutoExecute()
 -- Open UI on first load
 OpenUI()
 
-print("[Oishi Hub V1.02] Loaded! Dropdowns now open outside UI!")
+print("[Oishi Hub V1.02] Loaded! Dropdowns open below button!")
