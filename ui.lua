@@ -1,11 +1,15 @@
--- Oishi Hub UI Library
--- Smooth Circular Rainbow Color Wheel + Toggle + Lock
--- Full Version
+--==================================================
+-- OISHI HUB UI LIBRARY
+-- Main + Settings Edition
+-- Mobile + PC
+-- Animated UI
+-- Circular Rainbow Color Picker
+-- Slider Knobs
+--==================================================
 
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
 
 local Player = Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui")
@@ -19,34 +23,37 @@ local isPC = not UIS.TouchEnabled
 --==================================================
 
 local CONFIG = {
-    Accent = Color3.fromRGB(0, 150, 255),
 
-    Background = Color3.fromRGB(5, 5, 5),
-    Surface = Color3.fromRGB(15, 15, 15),
-    SurfaceLight = Color3.fromRGB(25, 25, 25),
+    Accent = Color3.fromRGB(0,150,255),
 
-    Text = Color3.fromRGB(200, 200, 200),
-    TextSecondary = Color3.fromRGB(100, 100, 100),
+    Background = Color3.fromRGB(5,5,5),
+    Surface = Color3.fromRGB(15,15,15),
+    SurfaceLight = Color3.fromRGB(25,25,25),
 
-    ToggleOn = Color3.fromRGB(0, 150, 255),
-    ToggleOff = Color3.fromRGB(40, 40, 40),
+    Text = Color3.fromRGB(220,220,220),
+    TextSecondary = Color3.fromRGB(110,110,110),
 
-    TabActive = Color3.fromRGB(0, 150, 255),
-    TabInactive = Color3.fromRGB(30, 30, 30),
+    ToggleOn = Color3.fromRGB(0,150,255),
+    ToggleOff = Color3.fromRGB(40,40,40),
 
-    Border = Color3.fromRGB(0, 150, 255),
+    Border = Color3.fromRGB(0,150,255),
+
+    TabActive = Color3.fromRGB(0,150,255),
+    TabInactive = Color3.fromRGB(30,30,30),
+
+    HoverAccent = Color3.fromRGB(30,180,255),
+    HoverSurface = Color3.fromRGB(40,40,40),
 
     Font = Enum.Font.GothamBold,
     FontMedium = Enum.Font.GothamMedium,
 
-    HoverAccent = Color3.fromRGB(30, 180, 255),
-    HoverSurface = Color3.fromRGB(40, 40, 40),
+    AnimationSpeed = 0.20,
 
-    ClickAccent = Color3.fromRGB(0, 100, 200),
-    ClickSurface = Color3.fromRGB(35, 35, 35),
+    CornerRadius = 6,
 
-    DropdownHover = Color3.fromRGB(40, 40, 40),
-    DropdownSelected = Color3.fromRGB(0, 150, 255),
+    UITransparency = 0,
+
+    UIScale = 1
 }
 
 --==================================================
@@ -63,11 +70,19 @@ end
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "OishiHubExample"
-ScreenGui.Parent = PlayerGui
 ScreenGui.ResetOnSpawn = false
 ScreenGui.IgnoreGuiInset = true
 ScreenGui.DisplayOrder = 999999
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = PlayerGui
+
+--==================================================
+-- UI SCALE
+--==================================================
+
+local UIScale = Instance.new("UIScale")
+UIScale.Scale = CONFIG.UIScale
+UIScale.Parent = ScreenGui
 
 --==================================================
 -- SIZE
@@ -75,11 +90,11 @@ ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 local uiWidth = isPC
     and 600
-    or math.min(650, Camera.ViewportSize.X - 20)
+    or math.min(650,Camera.ViewportSize.X - 20)
 
 local uiHeight = isPC
     and 450
-    or math.min(400, Camera.ViewportSize.Y * 0.5)
+    or math.min(400,Camera.ViewportSize.Y * 0.5)
 
 --==================================================
 -- MAIN FRAME
@@ -96,23 +111,28 @@ Main.Size = UDim2.new(
 
 Main.Position = UDim2.new(
     0.5,
-    -uiWidth / 2,
+    -uiWidth/2,
     0.5,
-    -uiHeight / 2
+    -uiHeight/2
 )
 
 Main.BackgroundColor3 = CONFIG.Background
 Main.BorderSizePixel = 0
 Main.Active = true
-Main.Visible = isPC
+Main.Visible = false
 Main.ZIndex = 10
 Main.Parent = ScreenGui
 
-local MainStroke = Instance.new("UIStroke")
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(
+    0,
+    CONFIG.CornerRadius
+)
+MainCorner.Parent = Main
 
+local MainStroke = Instance.new("UIStroke")
 MainStroke.Color = CONFIG.Border
 MainStroke.Thickness = 2
-MainStroke.Transparency = 0
 MainStroke.Parent = Main
 
 --==================================================
@@ -121,57 +141,119 @@ MainStroke.Parent = Main
 
 local Header = Instance.new("Frame")
 
-Header.Size = UDim2.new(1, 0, 0, 30)
+Header.Size = UDim2.new(
+    1,
+    0,
+    0,
+    34
+)
+
 Header.BackgroundColor3 = CONFIG.Surface
 Header.BorderSizePixel = 0
-Header.ZIndex = 11
+Header.ZIndex = 20
+Header.Active = true
 Header.Parent = Main
+
+local HeaderCorner = Instance.new("UICorner")
+HeaderCorner.CornerRadius = UDim.new(
+    0,
+    CONFIG.CornerRadius
+)
+HeaderCorner.Parent = Header
 
 local HeaderTitle = Instance.new("TextLabel")
 
-HeaderTitle.Size = UDim2.new(0, 300, 0, 20)
-HeaderTitle.Position = UDim2.new(0, 10, 0, 5)
+HeaderTitle.Size = UDim2.new(
+    1,
+    -70,
+    0,
+    24
+)
+
+HeaderTitle.Position = UDim2.new(
+    0,
+    12,
+    0,
+    5
+)
+
 HeaderTitle.BackgroundTransparency = 1
 HeaderTitle.Text = "OISHI HUB UI LIBRARY"
 HeaderTitle.Font = CONFIG.Font
 HeaderTitle.TextSize = 12
 HeaderTitle.TextColor3 = CONFIG.Accent
 HeaderTitle.TextXAlignment = Enum.TextXAlignment.Left
-HeaderTitle.ZIndex = 12
+HeaderTitle.ZIndex = 21
 HeaderTitle.Parent = Header
+
+--==================================================
+-- CLOSE
+--==================================================
 
 local CloseBtn = Instance.new("TextButton")
 
-CloseBtn.Size = UDim2.new(0, 20, 0, 20)
-CloseBtn.Position = UDim2.new(1, -25, 0, 5)
+CloseBtn.Size = UDim2.new(
+    0,
+    22,
+    0,
+    22
+)
+
+CloseBtn.Position = UDim2.new(
+    1,
+    -28,
+    0,
+    6
+)
+
 CloseBtn.BackgroundColor3 = CONFIG.SurfaceLight
 CloseBtn.BorderSizePixel = 0
-CloseBtn.Text = "X"
+CloseBtn.Text = "×"
 CloseBtn.Font = CONFIG.Font
-CloseBtn.TextSize = 10
+CloseBtn.TextSize = 14
 CloseBtn.TextColor3 = CONFIG.Text
-CloseBtn.ZIndex = 12
 CloseBtn.AutoButtonColor = false
+CloseBtn.ZIndex = 22
 CloseBtn.Parent = Header
+
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0,4)
+CloseCorner.Parent = CloseBtn
 
 CloseBtn.MouseButton1Click:Connect(function()
 
     if isPC then
-        ScreenGui:Destroy()
-    else
+
         Main.Visible = false
+
+    else
+
+        Main.Visible = false
+
     end
 
 end)
 
 --==================================================
--- TWO SIDED LAYOUT
+-- CONTENT AREA
 --==================================================
 
 local LeftSide = Instance.new("Frame")
 
-LeftSide.Size = UDim2.new(0.5, -1, 1, -30)
-LeftSide.Position = UDim2.new(0, 0, 0, 30)
+LeftSide.Size = UDim2.new(
+    0.5,
+    -1,
+    1,
+    -34
+)
+
+LeftSide.Position = UDim2.new(
+    0,
+    0,
+    0,
+    34
+)
+
 LeftSide.BackgroundColor3 = CONFIG.Background
 LeftSide.BorderSizePixel = 0
 LeftSide.ZIndex = 11
@@ -179,8 +261,20 @@ LeftSide.Parent = Main
 
 local RightSide = Instance.new("Frame")
 
-RightSide.Size = UDim2.new(0.5, -1, 1, -30)
-RightSide.Position = UDim2.new(0.5, 1, 0, 30)
+RightSide.Size = UDim2.new(
+    0.5,
+    -1,
+    1,
+    -34
+)
+
+RightSide.Position = UDim2.new(
+    0.5,
+    1,
+    0,
+    34
+)
+
 RightSide.BackgroundColor3 = CONFIG.Surface
 RightSide.BorderSizePixel = 0
 RightSide.ZIndex = 11
@@ -192,152 +286,202 @@ RightSide.Parent = Main
 
 local TabFrame = Instance.new("Frame")
 
-TabFrame.Size = UDim2.new(1, 0, 0, 26)
+TabFrame.Size = UDim2.new(
+    1,
+    0,
+    0,
+    30
+)
+
 TabFrame.BackgroundColor3 = CONFIG.Surface
 TabFrame.BorderSizePixel = 0
-TabFrame.ZIndex = 11
+TabFrame.ZIndex = 20
 TabFrame.Parent = LeftSide
 
 local Tabs = {
-    {name = "Tab 1"},
-    {name = "Tab 2"},
-    {name = "Tab 3"},
+    "Main",
+    "Settings"
 }
 
-local currentTab = "Tab 1"
+local CurrentTab = "Main"
 
 local TabButtons = {}
 local TabContents = {}
 
 local ContentContainer = Instance.new("Frame")
 
-ContentContainer.Size = UDim2.new(1, 0, 1, -26)
-ContentContainer.Position = UDim2.new(0, 0, 0, 26)
+ContentContainer.Size = UDim2.new(
+    1,
+    0,
+    1,
+    -30
+)
+
+ContentContainer.Position = UDim2.new(
+    0,
+    0,
+    0,
+    30
+)
+
 ContentContainer.BackgroundTransparency = 1
-ContentContainer.BorderSizePixel = 0
 ContentContainer.ClipsDescendants = true
 ContentContainer.ZIndex = 11
 ContentContainer.Parent = LeftSide
 
-for i, tab in ipairs(Tabs) do
+--==================================================
+-- CREATE TABS
+--==================================================
 
-    local btn = Instance.new("TextButton")
+for i,tabName in ipairs(Tabs) do
 
-    btn.Size = UDim2.new(
-        1 / 3,
-        -1,
+    local Button = Instance.new("TextButton")
+
+    Button.Size = UDim2.new(
+        0.5,
+        -2,
         0,
-        22
+        26
     )
 
-    btn.Position = UDim2.new(
-        (i - 1) * (1 / 3),
-        0.5,
+    Button.Position = UDim2.new(
+        (i-1)*0.5,
+        1,
         0,
         2
     )
 
-    btn.BackgroundColor3 =
-        tab.name == currentTab
+    Button.BackgroundColor3 =
+        tabName == CurrentTab
         and CONFIG.TabActive
         or CONFIG.TabInactive
 
-    btn.BackgroundTransparency =
-        tab.name == currentTab
-        and 0.3
-        or 0.5
+    Button.BackgroundTransparency =
+        tabName == CurrentTab
+        and 0.2
+        or 0.55
 
-    btn.BorderSizePixel = 0
-    btn.Text = tab.name
-    btn.Font = CONFIG.Font
-    btn.TextSize = 8
-
-    btn.TextColor3 =
-        tab.name == currentTab
-        and Color3.new(1, 1, 1)
+    Button.BorderSizePixel = 0
+    Button.Text = tabName
+    Button.Font = CONFIG.Font
+    Button.TextSize = 9
+    Button.TextColor3 =
+        tabName == CurrentTab
+        and Color3.new(1,1,1)
         or CONFIG.Text
 
-    btn.ZIndex = 12
-    btn.AutoButtonColor = false
-    btn.Parent = TabFrame
+    Button.AutoButtonColor = false
+    Button.ZIndex = 21
+    Button.Parent = TabFrame
 
-    TabButtons[tab.name] = btn
+    local buttonCorner = Instance.new("UICorner")
 
-    local content = Instance.new("Frame")
+    buttonCorner.CornerRadius = UDim.new(
+        0,
+        4
+    )
 
-    content.Size = UDim2.new(1, 0, 1, 0)
-    content.Position = UDim2.new(0, 0, 0, 0)
-    content.BackgroundTransparency = 1
-    content.BorderSizePixel = 0
-    content.Visible = tab.name == currentTab
-    content.ZIndex = 11
-    content.Parent = ContentContainer
+    buttonCorner.Parent = Button
 
-    local scrollFrame = Instance.new("ScrollingFrame")
+    TabButtons[tabName] = Button
 
-    scrollFrame.Size = UDim2.new(1, 0, 1, 0)
-    scrollFrame.BackgroundTransparency = 1
-    scrollFrame.BorderSizePixel = 0
-    scrollFrame.ScrollBarThickness = 3
-    scrollFrame.ScrollBarImageColor3 = CONFIG.Accent
-    scrollFrame.ScrollBarImageTransparency = 0.3
-    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 400)
-    scrollFrame.ZIndex = 12
-    scrollFrame.Parent = content
+    local Content = Instance.new("Frame")
 
-    local layout = Instance.new("UIListLayout")
+    Content.Size = UDim2.new(
+        1,
+        0,
+        1,
+        0
+    )
 
-    layout.Padding = UDim.new(0, 6)
-    layout.SortOrder = Enum.SortOrder.LayoutOrder
-    layout.Parent = scrollFrame
+    Content.BackgroundTransparency = 1
+    Content.Visible = tabName == CurrentTab
+    Content.ZIndex = 11
+    Content.Parent = ContentContainer
 
-    local padding = Instance.new("UIPadding")
+    local Scroll = Instance.new("ScrollingFrame")
 
-    padding.PaddingTop = UDim.new(0, 10)
-    padding.PaddingLeft = UDim.new(0, 10)
-    padding.PaddingRight = UDim.new(0, 10)
-    padding.PaddingBottom = UDim.new(0, 10)
+    Scroll.Size = UDim2.new(
+        1,
+        0,
+        1,
+        0
+    )
 
-    padding.Parent = scrollFrame
+    Scroll.BackgroundTransparency = 1
+    Scroll.BorderSizePixel = 0
+    Scroll.ScrollBarThickness = 3
+    Scroll.ScrollBarImageColor3 = CONFIG.Accent
+    Scroll.ScrollBarImageTransparency = 0.3
+    Scroll.CanvasSize = UDim2.new(0,0,0,0)
+    Scroll.ZIndex = 12
+    Scroll.Parent = Content
 
-    TabContents[tab.name] = {
-        frame = content,
-        scroll = scrollFrame,
-        layout = layout
+    local Layout = Instance.new("UIListLayout")
+
+    Layout.Padding = UDim.new(
+        0,
+        6
+    )
+
+    Layout.SortOrder = Enum.SortOrder.LayoutOrder
+    Layout.Parent = Scroll
+
+    local Padding = Instance.new("UIPadding")
+
+    Padding.PaddingTop = UDim.new(0,10)
+    Padding.PaddingLeft = UDim.new(0,10)
+    Padding.PaddingRight = UDim.new(0,10)
+    Padding.PaddingBottom = UDim.new(0,10)
+
+    Padding.Parent = Scroll
+
+    TabContents[tabName] = {
+        frame = Content,
+        scroll = Scroll,
+        layout = Layout
     }
 
-    btn.MouseButton1Click:Connect(function()
+    Button.MouseButton1Click:Connect(function()
 
-        if currentTab == tab.name then
+        if CurrentTab == tabName then
             return
         end
 
-        local oldTab = currentTab
+        local oldTab = CurrentTab
 
-        currentTab = tab.name
+        CurrentTab = tabName
 
-        for name, b in pairs(TabButtons) do
+        for name,btn in pairs(TabButtons) do
 
-            if name == tab.name then
+            if name == tabName then
 
                 TweenService:Create(
-                    b,
-                    TweenInfo.new(0.2),
+                    btn,
+                    TweenInfo.new(
+                        CONFIG.AnimationSpeed,
+                        Enum.EasingStyle.Quint,
+                        Enum.EasingDirection.Out
+                    ),
                     {
                         BackgroundColor3 = CONFIG.TabActive,
-                        BackgroundTransparency = 0.3,
-                        TextColor3 = Color3.new(1, 1, 1)
+                        BackgroundTransparency = 0.2,
+                        TextColor3 = Color3.new(1,1,1)
                     }
                 ):Play()
 
             else
 
                 TweenService:Create(
-                    b,
-                    TweenInfo.new(0.2),
+                    btn,
+                    TweenInfo.new(
+                        CONFIG.AnimationSpeed,
+                        Enum.EasingStyle.Quint,
+                        Enum.EasingDirection.Out
+                    ),
                     {
                         BackgroundColor3 = CONFIG.TabInactive,
-                        BackgroundTransparency = 0.5,
+                        BackgroundTransparency = 0.55,
                         TextColor3 = CONFIG.Text
                     }
                 ):Play()
@@ -346,24 +490,69 @@ for i, tab in ipairs(Tabs) do
 
         end
 
-        local oldContent = TabContents[oldTab]
-        local newContent = TabContents[tab.name]
+        local OldContent =
+            TabContents[oldTab].frame
 
-        if oldContent and newContent then
+        local NewContent =
+            TabContents[tabName].frame
 
-            oldContent.frame.Visible = false
-            newContent.frame.Visible = true
+        OldContent.Visible = false
 
-        end
+        NewContent.Visible = true
+
+        NewContent.Position =
+            UDim2.new(
+                0,
+                20,
+                0,
+                0
+            )
+
+        TweenService:Create(
+            NewContent,
+            TweenInfo.new(
+                CONFIG.AnimationSpeed,
+                Enum.EasingStyle.Quint,
+                Enum.EasingDirection.Out
+            ),
+            {
+                Position = UDim2.new(
+                    0,
+                    0,
+                    0,
+                    0
+                )
+            }
+        ):Play()
 
     end)
 end
 
 --==================================================
--- SECTION LABEL
+-- UPDATE CANVAS
 --==================================================
 
-local function CreateSectionLabel(tabName, text)
+local function UpdateCanvas()
+
+    for _,content in pairs(TabContents) do
+
+        content.scroll.CanvasSize =
+            UDim2.new(
+                0,
+                0,
+                0,
+                content.layout.AbsoluteContentSize.Y + 20
+            )
+
+    end
+
+end
+
+--==================================================
+-- SECTION
+--==================================================
+
+local function CreateSectionLabel(tabName,text)
 
     local content = TabContents[tabName]
 
@@ -371,19 +560,25 @@ local function CreateSectionLabel(tabName, text)
         return
     end
 
-    local label = Instance.new("TextLabel")
+    local Label = Instance.new("TextLabel")
 
-    label.Size = UDim2.new(1, 0, 0, 20)
-    label.BackgroundTransparency = 1
-    label.Text = text
-    label.Font = CONFIG.Font
-    label.TextSize = 9
-    label.TextColor3 = CONFIG.Accent
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.ZIndex = 13
-    label.Parent = content.scroll
+    Label.Size = UDim2.new(
+        1,
+        0,
+        0,
+        22
+    )
 
-    return label
+    Label.BackgroundTransparency = 1
+    Label.Text = text
+    Label.Font = CONFIG.Font
+    Label.TextSize = 9
+    Label.TextColor3 = CONFIG.Accent
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.ZIndex = 13
+    Label.Parent = content.scroll
+
+    return Label
 end
 
 --==================================================
@@ -403,118 +598,143 @@ local function CreateToggle(
         return
     end
 
-    local container = Instance.new("Frame")
+    local Container = Instance.new("Frame")
 
-    container.Size = UDim2.new(1, 0, 0, 34)
-    container.BackgroundColor3 = CONFIG.Surface
-    container.BorderSizePixel = 0
-    container.ZIndex = 12
-    container.Parent = content.scroll
+    Container.Size = UDim2.new(
+        1,
+        0,
+        0,
+        36
+    )
 
-    local nameLabel = Instance.new("TextLabel")
+    Container.BackgroundColor3 = CONFIG.Surface
+    Container.BorderSizePixel = 0
+    Container.ZIndex = 12
+    Container.Parent = content.scroll
 
-    nameLabel.Size = UDim2.new(0.65, 0, 0, 14)
-    nameLabel.Position = UDim2.new(0, 8, 0, 10)
-    nameLabel.BackgroundTransparency = 1
-    nameLabel.Text = name
-    nameLabel.Font = CONFIG.FontMedium
-    nameLabel.TextSize = 9
-    nameLabel.TextColor3 = CONFIG.Text
-    nameLabel.TextXAlignment = Enum.TextXAlignment.Left
-    nameLabel.ZIndex = 13
-    nameLabel.Parent = container
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0,CONFIG.CornerRadius)
+    Corner.Parent = Container
 
-    local toggleBtn = Instance.new("TextButton")
+    local Label = Instance.new("TextLabel")
 
-    toggleBtn.Size = UDim2.new(0, 32, 0, 18)
-    toggleBtn.Position = UDim2.new(1, -40, 0, 8)
+    Label.Size = UDim2.new(
+        0.65,
+        0,
+        0,
+        20
+    )
 
-    toggleBtn.BackgroundColor3 =
+    Label.Position = UDim2.new(
+        0,
+        8,
+        0,
+        8
+    )
+
+    Label.BackgroundTransparency = 1
+    Label.Text = name
+    Label.Font = CONFIG.FontMedium
+    Label.TextSize = 9
+    Label.TextColor3 = CONFIG.Text
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.ZIndex = 13
+    Label.Parent = Container
+
+    local Toggle = Instance.new("TextButton")
+
+    Toggle.Size = UDim2.new(
+        0,
+        34,
+        0,
+        18
+    )
+
+    Toggle.Position = UDim2.new(
+        1,
+        -42,
+        0,
+        9
+    )
+
+    Toggle.BackgroundColor3 =
         default
         and CONFIG.ToggleOn
         or CONFIG.ToggleOff
 
-    toggleBtn.BorderSizePixel = 0
-    toggleBtn.Text = ""
-    toggleBtn.AutoButtonColor = false
-    toggleBtn.ZIndex = 13
-    toggleBtn.Parent = container
+    Toggle.BorderSizePixel = 0
+    Toggle.Text = ""
+    Toggle.AutoButtonColor = false
+    Toggle.ZIndex = 14
+    Toggle.Parent = Container
 
-    local toggleCorner = Instance.new("UICorner")
+    local ToggleCorner = Instance.new("UICorner")
+    ToggleCorner.CornerRadius = UDim.new(1,0)
+    ToggleCorner.Parent = Toggle
 
-    toggleCorner.CornerRadius = UDim.new(1, 0)
-    toggleCorner.Parent = toggleBtn
+    local Knob = Instance.new("Frame")
 
-    local knob = Instance.new("Frame")
+    Knob.Size = UDim2.new(
+        0,
+        12,
+        0,
+        12
+    )
 
-    knob.Size = UDim2.new(0, 12, 0, 12)
-
-    knob.Position =
+    Knob.Position =
         default
-        and UDim2.new(0, 17, 0, 3)
-        or UDim2.new(0, 3, 0, 3)
+        and UDim2.new(0,19,0,3)
+        or UDim2.new(0,3,0,3)
 
-    knob.BackgroundColor3 = Color3.new(1, 1, 1)
-    knob.BorderSizePixel = 0
-    knob.ZIndex = 14
-    knob.Parent = toggleBtn
+    Knob.BackgroundColor3 = Color3.new(1,1,1)
+    Knob.BorderSizePixel = 0
+    Knob.ZIndex = 15
+    Knob.Parent = Toggle
 
-    local knobCorner = Instance.new("UICorner")
+    local KnobCorner = Instance.new("UICorner")
+    KnobCorner.CornerRadius = UDim.new(1,0)
+    KnobCorner.Parent = Knob
 
-    knobCorner.CornerRadius = UDim.new(1, 0)
-    knobCorner.Parent = knob
+    local State = default or false
 
-    local state = default or false
+    Toggle.MouseButton1Click:Connect(function()
 
-    toggleBtn.MouseButton1Click:Connect(function()
+        State = not State
 
-        state = not state
+        TweenService:Create(
+            Toggle,
+            TweenInfo.new(
+                CONFIG.AnimationSpeed
+            ),
+            {
+                BackgroundColor3 =
+                    State
+                    and CONFIG.ToggleOn
+                    or CONFIG.ToggleOff
+            }
+        ):Play()
 
-        if state then
-
-            TweenService:Create(
-                toggleBtn,
-                TweenInfo.new(0.2),
-                {
-                    BackgroundColor3 = CONFIG.ToggleOn
-                }
-            ):Play()
-
-            TweenService:Create(
-                knob,
-                TweenInfo.new(0.2),
-                {
-                    Position = UDim2.new(0, 17, 0, 3)
-                }
-            ):Play()
-
-        else
-
-            TweenService:Create(
-                toggleBtn,
-                TweenInfo.new(0.2),
-                {
-                    BackgroundColor3 = CONFIG.ToggleOff
-                }
-            ):Play()
-
-            TweenService:Create(
-                knob,
-                TweenInfo.new(0.2),
-                {
-                    Position = UDim2.new(0, 3, 0, 3)
-                }
-            ):Play()
-
-        end
+        TweenService:Create(
+            Knob,
+            TweenInfo.new(
+                CONFIG.AnimationSpeed,
+                Enum.EasingStyle.Quint
+            ),
+            {
+                Position =
+                    State
+                    and UDim2.new(0,19,0,3)
+                    or UDim2.new(0,3,0,3)
+            }
+        ):Play()
 
         if callback then
-            callback(state)
+            callback(State)
         end
 
     end)
 
-    return container
+    return Container
 end
 
 --==================================================
@@ -533,44 +753,61 @@ local function CreateButton(
         return
     end
 
-    local btn = Instance.new("TextButton")
+    local Button = Instance.new("TextButton")
 
-    btn.Size = UDim2.new(1, 0, 0, 34)
-    btn.BackgroundColor3 = CONFIG.Surface
-    btn.BorderSizePixel = 0
-    btn.Text = name
-    btn.Font = CONFIG.Font
-    btn.TextSize = 9
-    btn.TextColor3 = CONFIG.Text
-    btn.ZIndex = 12
-    btn.AutoButtonColor = false
-    btn.Parent = content.scroll
+    Button.Size = UDim2.new(
+        1,
+        0,
+        0,
+        36
+    )
 
-    btn.MouseEnter:Connect(function()
+    Button.BackgroundColor3 = CONFIG.Surface
+    Button.BorderSizePixel = 0
+    Button.Text = name
+    Button.Font = CONFIG.Font
+    Button.TextSize = 9
+    Button.TextColor3 = CONFIG.Text
+    Button.AutoButtonColor = false
+    Button.ZIndex = 12
+    Button.Parent = content.scroll
+
+    local Corner = Instance.new("UICorner")
+
+    Corner.CornerRadius = UDim.new(
+        0,
+        CONFIG.CornerRadius
+    )
+
+    Corner.Parent = Button
+
+    Button.MouseEnter:Connect(function()
 
         TweenService:Create(
-            btn,
+            Button,
             TweenInfo.new(0.15),
             {
-                BackgroundColor3 = CONFIG.HoverSurface
+                BackgroundColor3 =
+                    CONFIG.HoverSurface
             }
         ):Play()
 
     end)
 
-    btn.MouseLeave:Connect(function()
+    Button.MouseLeave:Connect(function()
 
         TweenService:Create(
-            btn,
+            Button,
             TweenInfo.new(0.15),
             {
-                BackgroundColor3 = CONFIG.Surface
+                BackgroundColor3 =
+                    CONFIG.Surface
             }
         ):Play()
 
     end)
 
-    btn.MouseButton1Click:Connect(function()
+    Button.MouseButton1Click:Connect(function()
 
         if callback then
             callback()
@@ -578,7 +815,7 @@ local function CreateButton(
 
     end)
 
-    return btn
+    return Button
 end
 
 --==================================================
@@ -600,115 +837,223 @@ local function CreateSlider(
         return
     end
 
-    local container = Instance.new("Frame")
+    local Container = Instance.new("Frame")
 
-    container.Size = UDim2.new(1, 0, 0, 40)
-    container.BackgroundColor3 = CONFIG.Surface
-    container.BorderSizePixel = 0
-    container.ZIndex = 12
-    container.Parent = content.scroll
+    Container.Size = UDim2.new(
+        1,
+        0,
+        0,
+        48
+    )
 
-    local nameLabel = Instance.new("TextLabel")
+    Container.BackgroundColor3 = CONFIG.Surface
+    Container.BorderSizePixel = 0
+    Container.Active = true
+    Container.ZIndex = 12
+    Container.Parent = content.scroll
 
-    nameLabel.Size = UDim2.new(0.55, 0, 0, 14)
-    nameLabel.Position = UDim2.new(0, 8, 0, 5)
-    nameLabel.BackgroundTransparency = 1
-    nameLabel.Text = name
-    nameLabel.Font = CONFIG.FontMedium
-    nameLabel.TextSize = 8
-    nameLabel.TextColor3 = CONFIG.Text
-    nameLabel.TextXAlignment = Enum.TextXAlignment.Left
-    nameLabel.ZIndex = 13
-    nameLabel.Parent = container
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0,CONFIG.CornerRadius)
+    Corner.Parent = Container
 
-    local valueLabel = Instance.new("TextLabel")
+    local Label = Instance.new("TextLabel")
 
-    valueLabel.Size = UDim2.new(0.3, 0, 0, 14)
-    valueLabel.Position = UDim2.new(0.65, -5, 0, 5)
-    valueLabel.BackgroundTransparency = 1
-    valueLabel.Text = tostring(default)
-    valueLabel.Font = CONFIG.FontMedium
-    valueLabel.TextSize = 8
-    valueLabel.TextColor3 = CONFIG.Accent
-    valueLabel.TextXAlignment = Enum.TextXAlignment.Right
-    valueLabel.ZIndex = 13
-    valueLabel.Parent = container
+    Label.Size = UDim2.new(
+        0.6,
+        0,
+        0,
+        18
+    )
 
-    local sliderBg = Instance.new("Frame")
+    Label.Position = UDim2.new(
+        0,
+        8,
+        0,
+        5
+    )
 
-    sliderBg.Size = UDim2.new(1, -16, 0, 4)
-    sliderBg.Position = UDim2.new(0, 8, 0, 25)
-    sliderBg.BackgroundColor3 = CONFIG.SurfaceLight
-    sliderBg.BorderSizePixel = 0
-    sliderBg.ZIndex = 13
-    sliderBg.Parent = container
+    Label.BackgroundTransparency = 1
+    Label.Text = name
+    Label.Font = CONFIG.FontMedium
+    Label.TextSize = 8
+    Label.TextColor3 = CONFIG.Text
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.ZIndex = 13
+    Label.Parent = Container
 
-    local sliderCorner = Instance.new("UICorner")
+    local ValueLabel = Instance.new("TextLabel")
 
-    sliderCorner.CornerRadius = UDim.new(1, 0)
-    sliderCorner.Parent = sliderBg
+    ValueLabel.Size = UDim2.new(
+        0.3,
+        0,
+        0,
+        18
+    )
 
-    local sliderFill = Instance.new("Frame")
+    ValueLabel.Position = UDim2.new(
+        0.65,
+        0,
+        0,
+        5
+    )
 
-    local percentage =
-        (default - min) /
-        (max - min)
+    ValueLabel.BackgroundTransparency = 1
+    ValueLabel.Text = tostring(default)
+    ValueLabel.Font = CONFIG.FontMedium
+    ValueLabel.TextSize = 8
+    ValueLabel.TextColor3 = CONFIG.Accent
+    ValueLabel.TextXAlignment = Enum.TextXAlignment.Right
+    ValueLabel.ZIndex = 13
+    ValueLabel.Parent = Container
 
-    sliderFill.Size = UDim2.new(
-        percentage,
+    local SliderBg = Instance.new("Frame")
+
+    SliderBg.Size = UDim2.new(
+        1,
+        -22,
+        0,
+        5
+    )
+
+    SliderBg.Position = UDim2.new(
+        0,
+        11,
+        0,
+        32
+    )
+
+    SliderBg.BackgroundColor3 = CONFIG.SurfaceLight
+    SliderBg.BorderSizePixel = 0
+    SliderBg.Active = true
+    SliderBg.ZIndex = 14
+    SliderBg.Parent = Container
+
+    local SliderCorner = Instance.new("UICorner")
+    SliderCorner.CornerRadius = UDim.new(1,0)
+    SliderCorner.Parent = SliderBg
+
+    local Percentage =
+        math.clamp(
+            (default-min)/(max-min),
+            0,
+            1
+        )
+
+    local Fill = Instance.new("Frame")
+
+    Fill.Size = UDim2.new(
+        Percentage,
         0,
         1,
         0
     )
 
-    sliderFill.BackgroundColor3 = CONFIG.Accent
-    sliderFill.BorderSizePixel = 0
-    sliderFill.ZIndex = 14
-    sliderFill.Parent = sliderBg
+    Fill.BackgroundColor3 = CONFIG.Accent
+    Fill.BorderSizePixel = 0
+    Fill.Active = false
+    Fill.ZIndex = 15
+    Fill.Parent = SliderBg
 
-    local fillCorner = Instance.new("UICorner")
+    local FillCorner = Instance.new("UICorner")
+    FillCorner.CornerRadius = UDim.new(1,0)
+    FillCorner.Parent = Fill
 
-    fillCorner.CornerRadius = UDim.new(1, 0)
-    fillCorner.Parent = sliderFill
+    -- WHITE CIRCLE KNOB
+
+    local Knob = Instance.new("Frame")
+
+    Knob.Size = UDim2.new(
+        0,
+        14,
+        0,
+        14
+    )
+
+    Knob.AnchorPoint = Vector2.new(
+        0.5,
+        0.5
+    )
+
+    Knob.Position = UDim2.new(
+        Percentage,
+        0,
+        0.5,
+        0
+    )
+
+    Knob.BackgroundColor3 = Color3.new(
+        1,
+        1,
+        1
+    )
+
+    Knob.BorderSizePixel = 0
+    Knob.Active = false
+    Knob.ZIndex = 16
+    Knob.Parent = SliderBg
+
+    local KnobCorner = Instance.new("UICorner")
+
+    KnobCorner.CornerRadius =
+        UDim.new(1,0)
+
+    KnobCorner.Parent = Knob
+
+    local KnobStroke = Instance.new("UIStroke")
+
+    KnobStroke.Color = CONFIG.Accent
+    KnobStroke.Thickness = 1
+    KnobStroke.Parent = Knob
+
+    local draggingSlider = false
 
     local function updateSlider(input)
 
-        local relativeX =
+        local x =
+            input.Position.X -
+            SliderBg.AbsolutePosition.X
+
+        local percent =
             math.clamp(
-                (
-                    input.Position.X -
-                    sliderBg.AbsolutePosition.X
-                )
-                /
-                sliderBg.AbsoluteSize.X,
+                x /
+                SliderBg.AbsoluteSize.X,
                 0,
                 1
             )
 
         local value =
-            math.floor(
-                min +
-                (max - min) *
-                relativeX
-            )
+            min +
+            (max-min)*percent
 
-        valueLabel.Text = tostring(value)
+        value = math.floor(
+            value + 0.5
+        )
 
-        sliderFill.Size =
+        ValueLabel.Text =
+            tostring(value)
+
+        Fill.Size =
             UDim2.new(
-                relativeX,
+                percent,
                 0,
                 1,
+                0
+            )
+
+        Knob.Position =
+            UDim2.new(
+                percent,
+                0,
+                0.5,
                 0
             )
 
         if callback then
             callback(value)
         end
-
     end
 
-    sliderBg.InputBegan:Connect(function(input)
+    SliderBg.InputBegan:Connect(function(input)
 
         if input.UserInputType ==
             Enum.UserInputType.MouseButton1
@@ -716,56 +1061,311 @@ local function CreateSlider(
             input.UserInputType ==
             Enum.UserInputType.Touch then
 
+            draggingSlider = true
+
             updateSlider(input)
+        end
 
-            local moveConn
-            local endConn
+    end)
 
-            moveConn =
-                UIS.InputChanged:Connect(function(moveInput)
+    UIS.InputChanged:Connect(function(input)
 
-                    if moveInput.UserInputType ==
-                        Enum.UserInputType.MouseMovement
-                        or
-                        moveInput.UserInputType ==
-                        Enum.UserInputType.Touch then
+        if not draggingSlider then
+            return
+        end
 
-                        updateSlider(moveInput)
+        if input.UserInputType ==
+            Enum.UserInputType.MouseMovement
+            or
+            input.UserInputType ==
+            Enum.UserInputType.Touch then
 
-                    end
-
-                end)
-
-            endConn =
-                UIS.InputEnded:Connect(function(endInput)
-
-                    if endInput.UserInputType ==
-                        Enum.UserInputType.MouseButton1
-                        or
-                        endInput.UserInputType ==
-                        Enum.UserInputType.Touch then
-
-                        if moveConn then
-                            moveConn:Disconnect()
-                        end
-
-                        if endConn then
-                            endConn:Disconnect()
-                        end
-
-                    end
-
-                end)
+            updateSlider(input)
 
         end
 
     end)
 
-    return container
+    UIS.InputEnded:Connect(function(input)
+
+        if input.UserInputType ==
+            Enum.UserInputType.MouseButton1
+            or
+            input.UserInputType ==
+            Enum.UserInputType.Touch then
+
+            draggingSlider = false
+
+        end
+
+    end)
+
+    return Container
 end
 
 --==================================================
--- SMOOTH CIRCULAR COLOR PICKER
+-- DROPDOWN
+--==================================================
+
+local function CreateDropdown(
+    tabName,
+    name,
+    options,
+    default,
+    callback
+)
+
+    local content = TabContents[tabName]
+
+    if not content then
+        return
+    end
+
+    local Container = Instance.new("Frame")
+
+    Container.Size = UDim2.new(
+        1,
+        0,
+        0,
+        36
+    )
+
+    Container.BackgroundColor3 =
+        CONFIG.Surface
+
+    Container.BorderSizePixel = 0
+    Container.ZIndex = 12
+    Container.ClipsDescendants = true
+    Container.Parent = content.scroll
+
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0,CONFIG.CornerRadius)
+    Corner.Parent = Container
+
+    local Button = Instance.new("TextButton")
+
+    Button.Size = UDim2.new(
+        1,
+        0,
+        0,
+        36
+    )
+
+    Button.BackgroundTransparency = 1
+    Button.Text = ""
+    Button.AutoButtonColor = false
+    Button.ZIndex = 15
+    Button.Parent = Container
+
+    local Label = Instance.new("TextLabel")
+
+    Label.Size = UDim2.new(
+        0.55,
+        0,
+        1,
+        0
+    )
+
+    Label.Position = UDim2.new(
+        0,
+        8,
+        0,
+        0
+    )
+
+    Label.BackgroundTransparency = 1
+    Label.Text = name
+    Label.Font = CONFIG.FontMedium
+    Label.TextSize = 9
+    Label.TextColor3 = CONFIG.Text
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.ZIndex = 16
+    Label.Parent = Button
+
+    local Selected = Instance.new("TextLabel")
+
+    Selected.Size = UDim2.new(
+        0.35,
+        0,
+        1,
+        0
+    )
+
+    Selected.Position = UDim2.new(
+        0.55,
+        0,
+        0,
+        0
+    )
+
+    Selected.BackgroundTransparency = 1
+    Selected.Text = tostring(default)
+    Selected.Font = CONFIG.FontMedium
+    Selected.TextSize = 8
+    Selected.TextColor3 = CONFIG.Accent
+    Selected.TextXAlignment = Enum.TextXAlignment.Right
+    Selected.ZIndex = 16
+    Selected.Parent = Button
+
+    local Arrow = Instance.new("TextLabel")
+
+    Arrow.Size = UDim2.new(
+        0,
+        20,
+        0,
+        20
+    )
+
+    Arrow.Position = UDim2.new(
+        1,
+        -25,
+        0,
+        8
+    )
+
+    Arrow.BackgroundTransparency = 1
+    Arrow.Text = "▼"
+    Arrow.Font = CONFIG.Font
+    Arrow.TextSize = 8
+    Arrow.TextColor3 = CONFIG.TextSecondary
+    Arrow.ZIndex = 16
+    Arrow.Parent = Button
+
+    local Open = false
+
+    local optionButtons = {}
+
+    for i,option in ipairs(options) do
+
+        local Option = Instance.new("TextButton")
+
+        Option.Size = UDim2.new(
+            1,
+            -16,
+            0,
+            28
+        )
+
+        Option.Position = UDim2.new(
+            0,
+            8,
+            0,
+            38 + ((i-1)*30)
+        )
+
+        Option.BackgroundColor3 =
+            CONFIG.SurfaceLight
+
+        Option.BorderSizePixel = 0
+        Option.Text = tostring(option)
+        Option.Font = CONFIG.FontMedium
+        Option.TextSize = 8
+        Option.TextColor3 = CONFIG.Text
+        Option.AutoButtonColor = false
+        Option.ZIndex = 17
+        Option.Parent = Container
+
+        local OptionCorner = Instance.new("UICorner")
+
+        OptionCorner.CornerRadius =
+            UDim.new(0,4)
+
+        OptionCorner.Parent = Option
+
+        optionButtons[i] = Option
+
+        Option.MouseButton1Click:Connect(function()
+
+            Selected.Text =
+                tostring(option)
+
+            Open = false
+
+            local targetHeight = 36
+
+            TweenService:Create(
+                Container,
+                TweenInfo.new(
+                    CONFIG.AnimationSpeed,
+                    Enum.EasingStyle.Quint,
+                    Enum.EasingDirection.Out
+                ),
+                {
+                    Size = UDim2.new(
+                        1,
+                        0,
+                        0,
+                        targetHeight
+                    )
+                }
+            ):Play()
+
+            TweenService:Create(
+                Arrow,
+                TweenInfo.new(
+                    CONFIG.AnimationSpeed
+                ),
+                {
+                    Rotation = 0
+                }
+            ):Play()
+
+            if callback then
+                callback(option)
+            end
+
+        end)
+    end
+
+    Button.MouseButton1Click:Connect(function()
+
+        Open = not Open
+
+        local height =
+            Open
+            and (
+                40 +
+                (#options*30)
+            )
+            or 36
+
+        TweenService:Create(
+            Container,
+            TweenInfo.new(
+                CONFIG.AnimationSpeed,
+                Enum.EasingStyle.Quint,
+                Enum.EasingDirection.Out
+            ),
+            {
+                Size = UDim2.new(
+                    1,
+                    0,
+                    0,
+                    height
+                )
+            }
+        ):Play()
+
+        TweenService:Create(
+            Arrow,
+            TweenInfo.new(
+                CONFIG.AnimationSpeed
+            ),
+            {
+                Rotation =
+                    Open
+                    and 180
+                    or 0
+            }
+        ):Play()
+
+    end)
+
+    return Container
+end
+
+--==================================================
+-- RAINBOW COLOR PICKER
 --==================================================
 
 local function CreateRainbowColorPicker(
@@ -780,655 +1380,633 @@ local function CreateRainbowColorPicker(
         return
     end
 
-    --================================================
-    -- MAIN ROW
-    --================================================
+    local Container = Instance.new("Frame")
 
-    local container = Instance.new("Frame")
+    Container.Size = UDim2.new(
+        1,
+        0,
+        0,
+        36
+    )
 
-    container.Size = UDim2.new(1, 0, 0, 34)
-    container.BackgroundColor3 = CONFIG.Surface
-    container.BorderSizePixel = 0
-    container.ZIndex = 12
-    container.Parent = content.scroll
+    Container.BackgroundColor3 =
+        CONFIG.Surface
 
-    local nameLabel = Instance.new("TextLabel")
+    Container.BorderSizePixel = 0
+    Container.ZIndex = 12
+    Container.Parent = content.scroll
 
-    nameLabel.Size = UDim2.new(0.5, 0, 0, 24)
-    nameLabel.Position = UDim2.new(0, 8, 0, 5)
-    nameLabel.BackgroundTransparency = 1
-    nameLabel.Text = name
-    nameLabel.Font = CONFIG.FontMedium
-    nameLabel.TextSize = 9
-    nameLabel.TextColor3 = CONFIG.Text
-    nameLabel.TextXAlignment = Enum.TextXAlignment.Left
-    nameLabel.ZIndex = 13
-    nameLabel.Parent = container
+    local Corner = Instance.new("UICorner")
 
-    --================================================
-    -- COLOR PREVIEW
-    --================================================
+    Corner.CornerRadius =
+        UDim.new(
+            0,
+            CONFIG.CornerRadius
+        )
 
-    local previewBtn = Instance.new("TextButton")
+    Corner.Parent = Container
 
-    previewBtn.Size = UDim2.new(0, 24, 0, 24)
-    previewBtn.Position = UDim2.new(1, -32, 0, 5)
-    previewBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-    previewBtn.BorderSizePixel = 0
-    previewBtn.Text = ""
-    previewBtn.AutoButtonColor = false
-    previewBtn.ZIndex = 13
-    previewBtn.Parent = container
+    local Label = Instance.new("TextLabel")
 
-    local previewCorner = Instance.new("UICorner")
+    Label.Size = UDim2.new(
+        0.6,
+        0,
+        1,
+        0
+    )
 
-    previewCorner.CornerRadius = UDim.new(1, 0)
-    previewCorner.Parent = previewBtn
+    Label.Position = UDim2.new(
+        0,
+        8,
+        0,
+        0
+    )
 
-    local previewStroke = Instance.new("UIStroke")
+    Label.BackgroundTransparency = 1
+    Label.Text = name
+    Label.Font = CONFIG.FontMedium
+    Label.TextSize = 9
+    Label.TextColor3 = CONFIG.Text
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.ZIndex = 13
+    Label.Parent = Container
 
-    previewStroke.Color = Color3.fromRGB(80, 80, 85)
-    previewStroke.Thickness = 1
-    previewStroke.Parent = previewBtn
+    local Preview = Instance.new("TextButton")
 
-    local currentColor =
-        Color3.fromRGB(255, 0, 0)
+    Preview.Size = UDim2.new(
+        0,
+        22,
+        0,
+        22
+    )
 
-    local activePopup = nil
+    Preview.Position = UDim2.new(
+        1,
+        -32,
+        0,
+        7
+    )
 
-    --================================================
-    -- OPEN PICKER
-    --================================================
+    Preview.BackgroundColor3 =
+        Color3.fromRGB(255,0,0)
 
-    previewBtn.MouseButton1Click:Connect(function()
+    Preview.BorderSizePixel = 0
+    Preview.Text = ""
+    Preview.AutoButtonColor = false
+    Preview.ZIndex = 14
+    Preview.Parent = Container
 
-        if activePopup then
+    local PreviewCorner = Instance.new("UICorner")
 
-            activePopup:Destroy()
-            activePopup = nil
+    PreviewCorner.CornerRadius =
+        UDim.new(1,0)
+
+    PreviewCorner.Parent = Preview
+
+    local PreviewStroke = Instance.new("UIStroke")
+
+    PreviewStroke.Color =
+        Color3.fromRGB(255,255,255)
+
+    PreviewStroke.Transparency = 0.3
+    PreviewStroke.Thickness = 1
+    PreviewStroke.Parent = Preview
+
+    local CurrentColor =
+        Color3.fromRGB(
+            255,
+            0,
+            0
+        )
+
+    local ActivePopup
+
+    Preview.MouseButton1Click:Connect(function()
+
+        if ActivePopup then
+
+            local old = ActivePopup
+
+            ActivePopup = nil
+
+            TweenService:Create(
+                old,
+                TweenInfo.new(
+                    CONFIG.AnimationSpeed,
+                    Enum.EasingStyle.Quint,
+                    Enum.EasingDirection.In
+                ),
+                {
+                    Size = UDim2.new(
+                        0,
+                        210,
+                        0,
+                        0
+                    )
+                }
+            ):Play()
+
+            task.delay(
+                CONFIG.AnimationSpeed,
+                function()
+
+                    if old then
+                        old:Destroy()
+                    end
+
+                end
+            )
 
             return
         end
 
-        --================================================
+        --==================================================
         -- POPUP
-        --================================================
+        --==================================================
 
-        local PickerPopup = Instance.new("Frame")
+        local Popup = Instance.new("Frame")
 
-        activePopup = PickerPopup
+        ActivePopup = Popup
 
-        local popupWidth = 210
-        local popupHeight = 255
+        local popupWidth = 220
+        local popupHeight = 265
 
         local viewport =
             Camera.ViewportSize
 
         local popupX =
-            previewBtn.AbsolutePosition.X -
-            180
+            Preview.AbsolutePosition.X -
+            190
 
         local popupY =
-            previewBtn.AbsolutePosition.Y -
+            Preview.AbsolutePosition.Y -
             popupHeight -
-            5
+            8
 
-        popupX =
-            math.clamp(
-                popupX,
-                5,
-                viewport.X -
-                popupWidth -
-                5
-            )
+        popupX = math.clamp(
+            popupX,
+            5,
+            viewport.X-popupWidth-5
+        )
 
-        popupY =
-            math.clamp(
-                popupY,
-                5,
-                viewport.Y -
-                popupHeight -
-                5
-            )
+        popupY = math.clamp(
+            popupY,
+            5,
+            viewport.Y-popupHeight-5
+        )
 
-        PickerPopup.Size =
-            UDim2.new(
-                0,
-                popupWidth,
-                0,
-                popupHeight
-            )
+        Popup.Size = UDim2.new(
+            0,
+            popupWidth,
+            0,
+            0
+        )
 
-        PickerPopup.Position =
-            UDim2.new(
-                0,
-                popupX,
-                0,
-                popupY
-            )
+        Popup.Position = UDim2.new(
+            0,
+            popupX,
+            0,
+            popupY
+        )
 
-        PickerPopup.BackgroundColor3 =
+        Popup.BackgroundColor3 =
             Color3.fromRGB(
                 18,
                 18,
                 22
             )
 
-        PickerPopup.BorderSizePixel = 0
-        PickerPopup.ZIndex = 999
-        PickerPopup.Parent = ScreenGui
+        Popup.BorderSizePixel = 0
+        Popup.ClipsDescendants = true
+        Popup.ZIndex = 999
+        Popup.Parent = ScreenGui
 
-        --================================================
-        -- POPUP CORNER
-        --================================================
+        local PopupCorner = Instance.new("UICorner")
 
-        local popupCorner = Instance.new("UICorner")
+        PopupCorner.CornerRadius =
+            UDim.new(0,9)
 
-        popupCorner.CornerRadius =
-            UDim.new(0, 10)
+        PopupCorner.Parent = Popup
 
-        popupCorner.Parent =
-            PickerPopup
+        local PopupStroke = Instance.new("UIStroke")
 
-        --================================================
-        -- POPUP BORDER
-        --================================================
-
-        local popupStroke = Instance.new("UIStroke")
-
-        popupStroke.Color =
+        PopupStroke.Color =
             CONFIG.Accent
 
-        popupStroke.Thickness = 1
-        popupStroke.Transparency = 0.15
-        popupStroke.Parent = PickerPopup
+        PopupStroke.Thickness = 1
+        PopupStroke.Transparency = 0.1
+        PopupStroke.Parent = Popup
 
-        --================================================
+        -- OPEN ANIMATION
+
+        TweenService:Create(
+            Popup,
+            TweenInfo.new(
+                CONFIG.AnimationSpeed,
+                Enum.EasingStyle.Back,
+                Enum.EasingDirection.Out
+            ),
+            {
+                Size = UDim2.new(
+                    0,
+                    popupWidth,
+                    0,
+                    popupHeight
+                )
+            }
+        ):Play()
+
+        --==================================================
         -- TITLE
-        --================================================
+        --==================================================
 
-        local title = Instance.new("TextLabel")
+        local Title = Instance.new("TextLabel")
 
-        title.Size =
-            UDim2.new(
-                1,
-                -50,
-                0,
-                25
-            )
+        Title.Size = UDim2.new(
+            1,
+            -50,
+            0,
+            25
+        )
 
-        title.Position =
-            UDim2.new(
-                0,
-                10,
-                0,
-                3
-            )
+        Title.Position = UDim2.new(
+            0,
+            10,
+            0,
+            4
+        )
 
-        title.BackgroundTransparency = 1
-        title.Text = name
-        title.Font = CONFIG.Font
-        title.TextSize = 10
-        title.TextColor3 = CONFIG.Text
-        title.TextXAlignment =
-            Enum.TextXAlignment.Left
+        Title.BackgroundTransparency = 1
+        Title.Text = name
+        Title.Font = CONFIG.Font
+        Title.TextSize = 10
+        Title.TextColor3 = CONFIG.Text
+        Title.TextXAlignment = Enum.TextXAlignment.Left
+        Title.ZIndex = 1002
+        Title.Parent = Popup
 
-        title.ZIndex = 1001
-        title.Parent = PickerPopup
+        --==================================================
+        -- CLOSE
+        --==================================================
 
-        --================================================
-        -- CLOSE BUTTON
-        --================================================
+        local Close = Instance.new("TextButton")
 
-        local closeBtn = Instance.new("TextButton")
+        Close.Size = UDim2.new(
+            0,
+            22,
+            0,
+            22
+        )
 
-        closeBtn.Size =
-            UDim2.new(
-                0,
-                20,
-                0,
-                20
-            )
+        Close.Position = UDim2.new(
+            1,
+            -28,
+            0,
+            5
+        )
 
-        closeBtn.Position =
-            UDim2.new(
-                1,
-                -25,
-                0,
-                5
-            )
+        Close.BackgroundColor3 =
+            CONFIG.SurfaceLight
 
-        closeBtn.BackgroundColor3 =
-            Color3.fromRGB(
-                45,
-                45,
-                50
-            )
+        Close.BorderSizePixel = 0
+        Close.Text = "×"
+        Close.Font = CONFIG.Font
+        Close.TextSize = 13
+        Close.TextColor3 = CONFIG.Text
+        Close.AutoButtonColor = false
+        Close.ZIndex = 1003
+        Close.Parent = Popup
 
-        closeBtn.BorderSizePixel = 0
-        closeBtn.Text = "×"
-        closeBtn.Font = CONFIG.Font
-        closeBtn.TextSize = 12
-        closeBtn.TextColor3 =
-            CONFIG.Text
+        local CloseCorner = Instance.new("UICorner")
 
-        closeBtn.ZIndex = 1002
-        closeBtn.AutoButtonColor = false
-        closeBtn.Parent = PickerPopup
+        CloseCorner.CornerRadius =
+            UDim.new(1,0)
 
-        local closeCorner =
-            Instance.new("UICorner")
+        CloseCorner.Parent = Close
 
-        closeCorner.CornerRadius =
-            UDim.new(1, 0)
-
-        closeCorner.Parent =
-            closeBtn
-
-        closeBtn.MouseButton1Click:Connect(function()
-
-            PickerPopup:Destroy()
-            activePopup = nil
-
-        end)
-
-        --================================================
-        -- SMOOTH RAINBOW WHEEL
-        --================================================
+        --==================================================
+        -- CIRCLE WHEEL
+        --==================================================
 
         local wheelSize = 160
 
-        local colorWheel =
-            Instance.new("ImageButton")
+        local Wheel = Instance.new("Frame")
 
-        colorWheel.Size =
-            UDim2.new(
-                0,
-                wheelSize,
-                0,
-                wheelSize
-            )
+        Wheel.Size = UDim2.new(
+            0,
+            wheelSize,
+            0,
+            wheelSize
+        )
 
-        colorWheel.Position =
-            UDim2.new(
-                0.5,
-                -wheelSize / 2,
-                0,
-                30
-            )
+        Wheel.Position = UDim2.new(
+            0.5,
+            -wheelSize/2,
+            0,
+            32
+        )
 
-        colorWheel.BackgroundColor3 =
+        Wheel.BackgroundColor3 =
             Color3.new(
                 1,
                 1,
                 1
             )
 
-        colorWheel.BackgroundTransparency = 1
-        colorWheel.BorderSizePixel = 0
-        colorWheel.AutoButtonColor = false
-        colorWheel.ZIndex = 1000
-        colorWheel.Parent = PickerPopup
+        Wheel.BorderSizePixel = 0
+        Wheel.ClipsDescendants = true
+        Wheel.Active = true
+        Wheel.ZIndex = 1000
+        Wheel.Parent = Popup
 
-        -- Circular HSV wheel texture.
-        -- If your executor/game blocks this asset,
-        -- replace it with your own uploaded rainbow wheel.
-        colorWheel.Image =
-            "rbxassetid://6020299385"
+        local WheelCorner = Instance.new("UICorner")
 
-        colorWheel.ScaleType =
-            Enum.ScaleType.Fit
+        WheelCorner.CornerRadius =
+            UDim.new(1,0)
 
-        -- Make the actual GUI perfectly circular.
-        local wheelCorner =
-            Instance.new("UICorner")
+        WheelCorner.Parent = Wheel
 
-        wheelCorner.CornerRadius =
-            UDim.new(1, 0)
+        --==================================================
+        -- TRUE CIRCULAR HSV WHEEL
+        --==================================================
 
-        wheelCorner.Parent =
-            colorWheel
+        local segments = 90
+        local rings = 50
 
-        --================================================
+        local centerPoint =
+            wheelSize/2
+
+        local radius =
+            wheelSize/2
+
+        for ring=1,rings do
+
+            local saturation =
+                ring/rings
+
+            local ringRadius =
+                radius*saturation
+
+            local circumference =
+                2*math.pi*
+                math.max(
+                    ringRadius,
+                    1
+                )
+
+            local segmentSize =
+                circumference/
+                segments
+
+            for segment=1,segments do
+
+                local hue =
+                    (segment-1)/
+                    segments
+
+                local angle =
+                    hue*
+                    math.pi*2
+
+                local x =
+                    centerPoint+
+                    math.cos(angle)*
+                    ringRadius
+
+                local y =
+                    centerPoint+
+                    math.sin(angle)*
+                    ringRadius
+
+                local piece =
+                    Instance.new("Frame")
+
+                piece.Size = UDim2.new(
+                    0,
+                    math.max(
+                        3,
+                        segmentSize+1
+                    ),
+                    0,
+                    math.max(
+                        3,
+                        segmentSize+1
+                    )
+                )
+
+                piece.Position = UDim2.new(
+                    0,
+                    x-segmentSize/2,
+                    0,
+                    y-segmentSize/2
+                )
+
+                piece.BackgroundColor3 =
+                    Color3.fromHSV(
+                        hue,
+                        saturation,
+                        1
+                    )
+
+                piece.BorderSizePixel = 0
+                piece.ZIndex = 1000
+                piece.Parent = Wheel
+
+            end
+        end
+
+        --==================================================
         -- WHITE CENTER
-        --================================================
+        --==================================================
 
-        local centerSize = 38
+        local Center = Instance.new("Frame")
 
-        local center =
-            Instance.new("Frame")
+        Center.Size = UDim2.new(
+            0,
+            36,
+            0,
+            36
+        )
 
-        center.Size =
-            UDim2.new(
-                0,
-                centerSize,
-                0,
-                centerSize
+        Center.AnchorPoint =
+            Vector2.new(
+                0.5,
+                0.5
             )
 
-        center.Position =
-            UDim2.new(
-                0.5,
-                -centerSize / 2,
-                0.5,
-                -centerSize / 2
-            )
+        Center.Position = UDim2.new(
+            0.5,
+            0,
+            0.5,
+            0
+        )
 
-        center.BackgroundColor3 =
+        Center.BackgroundColor3 =
             Color3.new(
                 1,
                 1,
                 1
             )
 
-        center.BorderSizePixel = 0
-        center.ZIndex = 1001
-        center.Parent = colorWheel
+        Center.BorderSizePixel = 0
+        Center.ZIndex = 1001
+        Center.Parent = Wheel
 
-        local centerCorner =
+        local CenterCorner =
             Instance.new("UICorner")
 
-        centerCorner.CornerRadius =
-            UDim.new(1, 0)
+        CenterCorner.CornerRadius =
+            UDim.new(1,0)
 
-        centerCorner.Parent =
-            center
+        CenterCorner.Parent = Center
 
-        --================================================
+        --==================================================
         -- CURSOR
-        --================================================
+        --==================================================
 
-        local cursor =
-            Instance.new("Frame")
+        local Cursor = Instance.new("Frame")
 
-        cursor.Size =
-            UDim2.new(
-                0,
-                12,
-                0,
-                12
+        Cursor.Size = UDim2.new(
+            0,
+            13,
+            0,
+            13
+        )
+
+        Cursor.AnchorPoint =
+            Vector2.new(
+                0.5,
+                0.5
             )
 
-        cursor.Position =
+        Cursor.Position =
             UDim2.new(
                 0.5,
-                -6,
+                0,
                 0.5,
-                -6
+                0
             )
 
-        cursor.BackgroundColor3 =
+        Cursor.BackgroundColor3 =
             Color3.new(
                 1,
                 1,
                 1
             )
 
-        cursor.BorderSizePixel = 0
-        cursor.ZIndex = 1005
-        cursor.Parent = colorWheel
+        Cursor.BorderSizePixel = 0
+        Cursor.ZIndex = 1005
+        Cursor.Parent = Wheel
 
-        local cursorCorner =
+        local CursorCorner =
             Instance.new("UICorner")
 
-        cursorCorner.CornerRadius =
-            UDim.new(1, 0)
+        CursorCorner.CornerRadius =
+            UDim.new(1,0)
 
-        cursorCorner.Parent =
-            cursor
+        CursorCorner.Parent = Cursor
 
-        local cursorStroke =
+        local CursorStroke =
             Instance.new("UIStroke")
 
-        cursorStroke.Color =
+        CursorStroke.Color =
             Color3.new(
                 0,
                 0,
                 0
             )
 
-        cursorStroke.Thickness = 2
-        cursorStroke.Parent = cursor
+        CursorStroke.Thickness = 2
+        CursorStroke.Parent = Cursor
 
-        --================================================
-        -- RGB LABEL
-        --================================================
+        --==================================================
+        -- RGB
+        --==================================================
 
-        local rgbLabel =
-            Instance.new("TextLabel")
+        local RGB = Instance.new("TextLabel")
 
-        rgbLabel.Size =
-            UDim2.new(
-                1,
-                -20,
-                0,
-                20
-            )
+        RGB.Size = UDim2.new(
+            1,
+            -20,
+            0,
+            20
+        )
 
-        rgbLabel.Position =
-            UDim2.new(
-                0,
-                10,
-                0,
-                193
-            )
+        RGB.Position = UDim2.new(
+            0,
+            10,
+            0,
+            197
+        )
 
-        rgbLabel.BackgroundTransparency = 1
+        RGB.BackgroundTransparency = 1
 
-        rgbLabel.Text =
+        RGB.Text =
             "RGB: 255, 0, 0"
 
-        rgbLabel.Font =
+        RGB.Font =
             CONFIG.FontMedium
 
-        rgbLabel.TextSize = 9
-
-        rgbLabel.TextColor3 =
-            CONFIG.Text
-
-        rgbLabel.TextXAlignment =
+        RGB.TextSize = 9
+        RGB.TextColor3 = CONFIG.Text
+        RGB.TextXAlignment =
             Enum.TextXAlignment.Center
 
-        rgbLabel.ZIndex = 1001
-        rgbLabel.Parent = PickerPopup
+        RGB.ZIndex = 1002
+        RGB.Parent = Popup
 
-        --================================================
-        -- PRESET COLORS
-        --================================================
+        --==================================================
+        -- PICKER
+        --==================================================
 
-        local presets = {
-
-            Color3.fromRGB(255, 0, 0),
-            Color3.fromRGB(255, 128, 0),
-            Color3.fromRGB(255, 255, 0),
-            Color3.fromRGB(0, 255, 0),
-            Color3.fromRGB(0, 255, 255),
-            Color3.fromRGB(0, 128, 255),
-            Color3.fromRGB(0, 0, 255),
-            Color3.fromRGB(128, 0, 255),
-            Color3.fromRGB(255, 0, 255),
-            Color3.fromRGB(255, 255, 255),
-            Color3.fromRGB(0, 0, 0),
-
-        }
-
-        for i, preset in ipairs(presets) do
-
-            local presetBtn =
-                Instance.new("TextButton")
-
-            presetBtn.Size =
-                UDim2.new(
-                    0,
-                    14,
-                    0,
-                    14
-                )
-
-            local column =
-                i - 1
-
-            presetBtn.Position =
-                UDim2.new(
-                    0,
-                    8 + column * 18,
-                    0,
-                    218
-                )
-
-            presetBtn.BackgroundColor3 =
-                preset
-
-            presetBtn.BorderSizePixel = 0
-            presetBtn.Text = ""
-            presetBtn.AutoButtonColor = false
-            presetBtn.ZIndex = 1002
-            presetBtn.Parent = PickerPopup
-
-            local presetCorner =
-                Instance.new("UICorner")
-
-            presetCorner.CornerRadius =
-                UDim.new(1, 0)
-
-            presetCorner.Parent =
-                presetBtn
-
-            local presetStroke =
-                Instance.new("UIStroke")
-
-            presetStroke.Color =
-                Color3.fromRGB(
-                    60,
-                    60,
-                    65
-                )
-
-            presetStroke.Thickness = 1
-            presetStroke.Parent =
-                presetBtn
-
-            presetBtn.MouseButton1Click:Connect(function()
-
-                currentColor = preset
-
-                previewBtn.BackgroundColor3 =
-                    preset
-
-                rgbLabel.Text =
-                    string.format(
-                        "RGB: %d, %d, %d",
-
-                        math.floor(
-                            preset.R * 255
-                        ),
-
-                        math.floor(
-                            preset.G * 255
-                        ),
-
-                        math.floor(
-                            preset.B * 255
-                        )
-                    )
-
-                local h, s, v =
-                    preset:ToHSV()
-
-                local radius =
-                    (wheelSize / 2) * s
-
-                local angle =
-                    h *
-                    math.pi *
-                    2
-
-                local cursorX =
-                    wheelSize / 2 +
-                    math.cos(angle) *
-                    radius
-
-                local cursorY =
-                    wheelSize / 2 +
-                    math.sin(angle) *
-                    radius
-
-                cursor.Position =
-                    UDim2.new(
-                        0,
-                        cursorX - 6,
-                        0,
-                        cursorY - 6
-                    )
-
-                if callback then
-                    callback(preset)
-                end
-
-            end)
-
-        end
-
-        --================================================
-        -- PICK COLOR
-        --================================================
-
-        local draggingWheel = false
+        local dragging = false
 
         local function pickColor(input)
 
-            local wheelPos =
-                colorWheel.AbsolutePosition
+            local absolute =
+                Wheel.AbsolutePosition
 
-            local wheelAbsoluteSize =
-                colorWheel.AbsoluteSize
+            local size =
+                Wheel.AbsoluteSize
 
-            local centerX =
-                wheelPos.X +
-                wheelAbsoluteSize.X / 2
+            local cx =
+                absolute.X+
+                size.X/2
 
-            local centerY =
-                wheelPos.Y +
-                wheelAbsoluteSize.Y / 2
+            local cy =
+                absolute.Y+
+                size.Y/2
 
             local dx =
-                input.Position.X -
-                centerX
+                input.Position.X-cx
 
             local dy =
-                input.Position.Y -
-                centerY
+                input.Position.Y-cy
 
             local distance =
                 math.sqrt(
-                    dx * dx +
-                    dy * dy
+                    dx*dx+
+                    dy*dy
                 )
 
-            local radius =
-                wheelAbsoluteSize.X / 2
+            local maxRadius =
+                size.X/2
 
-            -- Keep selection inside the circle.
-            if distance > radius then
+            if distance >
+                maxRadius then
 
                 local scale =
-                    radius /
+                    maxRadius/
                     distance
 
-                dx =
-                    dx *
-                    scale
-
-                dy =
-                    dy *
-                    scale
+                dx = dx*scale
+                dy = dy*scale
 
                 distance =
-                    radius
+                    maxRadius
 
             end
 
-            -- Hue
             local angle =
                 math.atan2(
                     dy,
@@ -1436,85 +2014,56 @@ local function CreateRainbowColorPicker(
                 )
 
             local hue =
-                angle /
-                (math.pi * 2)
+                angle/
+                (math.pi*2)
 
             if hue < 0 then
-                hue = hue + 1
+                hue = hue+1
             end
 
-            -- Saturation
             local saturation =
                 math.clamp(
-                    distance /
-                    radius,
+                    distance/
+                    maxRadius,
                     0,
                     1
                 )
 
-            -- Brightness
-            local value = 1
-
-            local pickedColor =
+            local color =
                 Color3.fromHSV(
                     hue,
                     saturation,
-                    value
+                    1
                 )
 
-            currentColor =
-                pickedColor
+            CurrentColor = color
 
-            previewBtn.BackgroundColor3 =
-                pickedColor
+            Preview.BackgroundColor3 =
+                color
 
-            rgbLabel.Text =
+            RGB.Text =
                 string.format(
                     "RGB: %d, %d, %d",
-
-                    math.floor(
-                        pickedColor.R * 255
-                    ),
-
-                    math.floor(
-                        pickedColor.G * 255
-                    ),
-
-                    math.floor(
-                        pickedColor.B * 255
-                    )
+                    math.floor(color.R*255),
+                    math.floor(color.G*255),
+                    math.floor(color.B*255)
                 )
 
-            -- Cursor
-            local cursorX =
-                wheelAbsoluteSize.X / 2 +
-                dx
-
-            local cursorY =
-                wheelAbsoluteSize.Y / 2 +
-                dy
-
-            cursor.Position =
+            Cursor.Position =
                 UDim2.new(
-                    0,
-                    cursorX - 6,
-                    0,
-                    cursorY - 6
+                    0.5,
+                    dx,
+                    0.5,
+                    dy
                 )
 
             if callback then
-                callback(
-                    pickedColor
-                )
+                callback(color)
             end
 
         end
 
-        --================================================
-        -- WHEEL INPUT
-        --================================================
-
-        colorWheel.InputBegan:Connect(function(input)
+        Wheel.InputBegan:Connect(function(input)
 
             if input.UserInputType ==
                 Enum.UserInputType.MouseButton1
@@ -1522,7 +2071,7 @@ local function CreateRainbowColorPicker(
                 input.UserInputType ==
                 Enum.UserInputType.Touch then
 
-                draggingWheel = true
+                dragging = true
 
                 pickColor(input)
 
@@ -1530,12 +2079,12 @@ local function CreateRainbowColorPicker(
 
         end)
 
-        local moveConnection
+        local MoveConnection
 
-        moveConnection =
+        MoveConnection =
             UIS.InputChanged:Connect(function(input)
 
-                if not draggingWheel then
+                if not dragging then
                     return
                 end
 
@@ -1551,9 +2100,9 @@ local function CreateRainbowColorPicker(
 
             end)
 
-        local endConnection
+        local EndConnection
 
-        endConnection =
+        EndConnection =
             UIS.InputEnded:Connect(function(input)
 
                 if input.UserInputType ==
@@ -1562,53 +2111,175 @@ local function CreateRainbowColorPicker(
                     input.UserInputType ==
                     Enum.UserInputType.Touch then
 
-                    draggingWheel = false
+                    dragging = false
 
                 end
 
             end)
 
-        --================================================
-        -- CLEANUP
-        --================================================
+        --==================================================
+        -- PRESETS
+        --==================================================
 
-        PickerPopup.Destroying:Connect(function()
+        local presets = {
 
-            draggingWheel = false
+            Color3.fromRGB(255,0,0),
+            Color3.fromRGB(255,128,0),
+            Color3.fromRGB(255,255,0),
+            Color3.fromRGB(0,255,0),
+            Color3.fromRGB(0,255,255),
+            Color3.fromRGB(0,128,255),
+            Color3.fromRGB(0,0,255),
+            Color3.fromRGB(128,0,255),
+            Color3.fromRGB(255,0,255),
+            Color3.fromRGB(255,255,255),
+            Color3.fromRGB(0,0,0)
 
-            if moveConnection then
-                moveConnection:Disconnect()
+        }
+
+        for i,color in ipairs(presets) do
+
+            local Button =
+                Instance.new("TextButton")
+
+            Button.Size = UDim2.new(
+                0,
+                14,
+                0,
+                14
+            )
+
+            Button.Position = UDim2.new(
+                0,
+                8+(i-1)*18,
+                0,
+                222
+            )
+
+            Button.BackgroundColor3 =
+                color
+
+            Button.BorderSizePixel = 0
+            Button.Text = ""
+            Button.AutoButtonColor = false
+            Button.ZIndex = 1003
+            Button.Parent = Popup
+
+            local Corner =
+                Instance.new("UICorner")
+
+            Corner.CornerRadius =
+                UDim.new(1,0)
+
+            Corner.Parent = Button
+
+            Button.MouseButton1Click:Connect(function()
+
+                CurrentColor = color
+
+                Preview.BackgroundColor3 =
+                    color
+
+                local h,s,v =
+                    color:ToHSV()
+
+                Cursor.Position =
+                    UDim2.new(
+                        0.5,
+                        math.cos(h*math.pi*2)*
+                            (wheelSize/2*s),
+
+                        0.5,
+                        math.sin(h*math.pi*2)*
+                            (wheelSize/2*s)
+                    )
+
+                RGB.Text =
+                    string.format(
+                        "RGB: %d, %d, %d",
+                        math.floor(color.R*255),
+                        math.floor(color.G*255),
+                        math.floor(color.B*255)
+                    )
+
+                if callback then
+                    callback(color)
+                end
+
+            end)
+
+        end
+
+        --==================================================
+        -- CLOSE
+        --==================================================
+
+        Close.MouseButton1Click:Connect(function()
+
+            if not Popup then
+                return
             end
 
-            if endConnection then
-                endConnection:Disconnect()
+            ActivePopup = nil
+
+            TweenService:Create(
+                Popup,
+                TweenInfo.new(
+                    CONFIG.AnimationSpeed,
+                    Enum.EasingStyle.Quint,
+                    Enum.EasingDirection.In
+                ),
+                {
+                    Size = UDim2.new(
+                        0,
+                        popupWidth,
+                        0,
+                        0
+                    )
+                }
+            ):Play()
+
+            task.delay(
+                CONFIG.AnimationSpeed,
+                function()
+
+                    if Popup then
+                        Popup:Destroy()
+                    end
+
+                end
+            )
+
+        end)
+
+        Popup.Destroying:Connect(function()
+
+            if MoveConnection then
+                MoveConnection:Disconnect()
             end
 
-            if activePopup ==
-                PickerPopup then
-
-                activePopup = nil
-
+            if EndConnection then
+                EndConnection:Disconnect()
             end
 
         end)
 
     end)
 
-    return container
+    return Container
 end
 
 --==================================================
--- EXAMPLE CONTENT
+-- MAIN TAB
 --==================================================
 
 CreateSectionLabel(
-    "Tab 1",
+    "Main",
     "TOGGLES"
 )
 
 CreateToggle(
-    "Tab 1",
+    "Main",
     "Toggle Test 1",
     false,
     function(state)
@@ -1622,7 +2293,7 @@ CreateToggle(
 )
 
 CreateToggle(
-    "Tab 1",
+    "Main",
     "Toggle Test 2",
     true,
     function(state)
@@ -1635,13 +2306,27 @@ CreateToggle(
     end
 )
 
+CreateToggle(
+    "Main",
+    "Enable Feature",
+    false,
+    function(state)
+
+        print(
+            "Feature:",
+            state
+        )
+
+    end
+)
+
 CreateSectionLabel(
-    "Tab 1",
+    "Main",
     "BUTTONS"
 )
 
 CreateButton(
-    "Tab 1",
+    "Main",
     "Button Test 1",
     function()
 
@@ -1652,13 +2337,25 @@ CreateButton(
     end
 )
 
+CreateButton(
+    "Main",
+    "Test Notification",
+    function()
+
+        print(
+            "[Oishi] Notification!"
+        )
+
+    end
+)
+
 CreateSectionLabel(
-    "Tab 2",
+    "Main",
     "SLIDERS"
 )
 
 CreateSlider(
-    "Tab 2",
+    "Main",
     "Slider Test 1",
     0,
     100,
@@ -1673,13 +2370,54 @@ CreateSlider(
     end
 )
 
+CreateSlider(
+    "Main",
+    "Speed",
+    1,
+    200,
+    80,
+    function(value)
+
+        print(
+            "Speed:",
+            value
+        )
+
+    end
+)
+
 CreateSectionLabel(
-    "Tab 3",
+    "Main",
+    "DROPDOWNS"
+)
+
+CreateDropdown(
+    "Main",
+    "Select Mode",
+    {
+        "Default",
+        "Fast",
+        "Smooth",
+        "Extreme"
+    },
+    "Default",
+    function(value)
+
+        print(
+            "Selected:",
+            value
+        )
+
+    end
+)
+
+CreateSectionLabel(
+    "Main",
     "COLOR PICKERS"
 )
 
 CreateRainbowColorPicker(
-    "Tab 3",
+    "Main",
     "Color 1",
     function(color)
 
@@ -1692,7 +2430,7 @@ CreateRainbowColorPicker(
 )
 
 CreateRainbowColorPicker(
-    "Tab 3",
+    "Main",
     "Color 2",
     function(color)
 
@@ -1705,32 +2443,474 @@ CreateRainbowColorPicker(
 )
 
 --==================================================
--- UPDATE CANVAS
+-- SETTINGS TAB
+--==================================================
+
+CreateSectionLabel(
+    "Settings",
+    "UI APPEARANCE"
+)
+
+CreateRainbowColorPicker(
+    "Settings",
+    "Accent Color",
+    function(color)
+
+        CONFIG.Accent = color
+        CONFIG.ToggleOn = color
+        CONFIG.TabActive = color
+        CONFIG.Border = color
+
+        MainStroke.Color = color
+        HeaderTitle.TextColor3 = color
+
+        for _,btn in pairs(TabButtons) do
+
+            if btn == TabButtons[CurrentTab] then
+                btn.BackgroundColor3 = color
+            end
+
+        end
+
+    end
+)
+
+CreateRainbowColorPicker(
+    "Settings",
+    "Background Color",
+    function(color)
+
+        CONFIG.Background = color
+
+        Main.BackgroundColor3 = color
+        LeftSide.BackgroundColor3 = color
+
+    end
+)
+
+CreateRainbowColorPicker(
+    "Settings",
+    "Surface Color",
+    function(color)
+
+        CONFIG.Surface = color
+
+        Header.BackgroundColor3 = color
+        RightSide.BackgroundColor3 = color
+
+        for _,content in pairs(TabContents) do
+
+            for _,object in ipairs(
+                content.scroll:GetChildren()
+            ) do
+
+                if object:IsA("Frame") then
+
+                    object.BackgroundColor3 =
+                        color
+
+                end
+
+            end
+
+        end
+
+    end
+)
+
+CreateRainbowColorPicker(
+    "Settings",
+    "Text Color",
+    function(color)
+
+        CONFIG.Text = color
+
+        HeaderTitle.TextColor3 =
+            CONFIG.Accent
+
+    end
+)
+
+CreateSectionLabel(
+    "Settings",
+    "UI CONTROLS"
+)
+
+CreateSlider(
+    "Settings",
+    "UI Scale",
+    70,
+    130,
+    100,
+    function(value)
+
+        CONFIG.UIScale =
+            value/100
+
+        UIScale.Scale =
+            CONFIG.UIScale
+
+    end
+)
+
+CreateSlider(
+    "Settings",
+    "Corner Radius",
+    0,
+    15,
+    6,
+    function(value)
+
+        CONFIG.CornerRadius =
+            value
+
+        MainCorner.CornerRadius =
+            UDim.new(
+                0,
+                value
+            )
+
+    end
+)
+
+CreateSlider(
+    "Settings",
+    "Animation Speed",
+    5,
+    100,
+    20,
+    function(value)
+
+        CONFIG.AnimationSpeed =
+            value/100
+
+    end
+)
+
+CreateSlider(
+    "Settings",
+    "Border Thickness",
+    0,
+    5,
+    2,
+    function(value)
+
+        MainStroke.Thickness =
+            value
+
+    end
+)
+
+CreateSectionLabel(
+    "Settings",
+    "EXTRA OPTIONS"
+)
+
+CreateToggle(
+    "Settings",
+    "Show UI Border",
+    true,
+    function(state)
+
+        MainStroke.Enabled =
+            state
+
+    end
+)
+
+CreateToggle(
+    "Settings",
+    "Rounded UI",
+    true,
+    function(state)
+
+        MainCorner.CornerRadius =
+            UDim.new(
+                0,
+                state
+                and CONFIG.CornerRadius
+                or 0
+            )
+
+    end
+)
+
+CreateToggle(
+    "Settings",
+    "Animated UI",
+    true,
+    function(state)
+
+        if state then
+
+            CONFIG.AnimationSpeed = 0.20
+
+        else
+
+            CONFIG.AnimationSpeed = 0
+
+        end
+
+    end
+)
+
+CreateToggle(
+    "Settings",
+    "Compact Mode",
+    false,
+    function(state)
+
+        if state then
+
+            UIScale.Scale = 0.85
+
+        else
+
+            UIScale.Scale =
+                CONFIG.UIScale
+
+        end
+
+    end
+)
+
+CreateDropdown(
+    "Settings",
+    "Font",
+    {
+        "GothamBold",
+        "GothamMedium",
+        "SourceSans",
+        "Arial"
+    },
+    "GothamBold",
+    function(value)
+
+        local fontMap = {
+
+            GothamBold =
+                Enum.Font.GothamBold,
+
+            GothamMedium =
+                Enum.Font.GothamMedium,
+
+            SourceSans =
+                Enum.Font.SourceSans,
+
+            Arial =
+                Enum.Font.Arial
+
+        }
+
+        if fontMap[value] then
+
+            CONFIG.Font =
+                fontMap[value]
+
+        end
+
+    end
+)
+
+CreateDropdown(
+    "Settings",
+    "UI Theme",
+    {
+        "Blue",
+        "Purple",
+        "Red",
+        "Green",
+        "White"
+    },
+    "Blue",
+    function(value)
+
+        local themes = {
+
+            Blue =
+                Color3.fromRGB(
+                    0,
+                    150,
+                    255
+                ),
+
+            Purple =
+                Color3.fromRGB(
+                    150,
+                    70,
+                    255
+                ),
+
+            Red =
+                Color3.fromRGB(
+                    255,
+                    60,
+                    60
+                ),
+
+            Green =
+                Color3.fromRGB(
+                    50,
+                    220,
+                    120
+                ),
+
+            White =
+                Color3.fromRGB(
+                    255,
+                    255,
+                    255
+                )
+
+        }
+
+        if themes[value] then
+
+            local color =
+                themes[value]
+
+            CONFIG.Accent = color
+            CONFIG.ToggleOn = color
+            CONFIG.TabActive = color
+            CONFIG.Border = color
+
+            MainStroke.Color =
+                color
+
+            HeaderTitle.TextColor3 =
+                color
+
+            for name,button in pairs(
+                TabButtons
+            ) do
+
+                if name == CurrentTab then
+
+                    button.BackgroundColor3 =
+                        color
+
+                end
+
+            end
+
+        end
+
+    end
+)
+
+CreateSectionLabel(
+    "Settings",
+    "RESET"
+)
+
+CreateButton(
+    "Settings",
+    "Reset UI Settings",
+    function()
+
+        CONFIG.Accent =
+            Color3.fromRGB(
+                0,
+                150,
+                255
+            )
+
+        CONFIG.Background =
+            Color3.fromRGB(
+                5,
+                5,
+                5
+            )
+
+        CONFIG.Surface =
+            Color3.fromRGB(
+                15,
+                15,
+                15
+            )
+
+        CONFIG.Text =
+            Color3.fromRGB(
+                220,
+                220,
+                220
+            )
+
+        CONFIG.Border =
+            CONFIG.Accent
+
+        CONFIG.UIScale = 1
+
+        CONFIG.CornerRadius = 6
+
+        CONFIG.AnimationSpeed = 0.20
+
+        UIScale.Scale = 1
+
+        Main.BackgroundColor3 =
+            CONFIG.Background
+
+        LeftSide.BackgroundColor3 =
+            CONFIG.Background
+
+        RightSide.BackgroundColor3 =
+            CONFIG.Surface
+
+        Header.BackgroundColor3 =
+            CONFIG.Surface
+
+        MainStroke.Color =
+            CONFIG.Accent
+
+        MainStroke.Thickness = 2
+
+        HeaderTitle.TextColor3 =
+            CONFIG.Accent
+
+        MainCorner.CornerRadius =
+            UDim.new(
+                0,
+                CONFIG.CornerRadius
+            )
+
+    end
+)
+
+--==================================================
+-- CANVAS UPDATE
 --==================================================
 
 task.wait(0.1)
 
-for _, content in pairs(TabContents) do
+UpdateCanvas()
 
-    content.scroll.CanvasSize =
-        UDim2.new(
-            0,
-            0,
-            0,
-            content.layout.AbsoluteContentSize.Y + 20
-        )
+for _,content in pairs(TabContents) do
+
+    content.layout:GetPropertyChangedSignal(
+        "AbsoluteContentSize"
+    ):Connect(function()
+
+        content.scroll.CanvasSize =
+            UDim2.new(
+                0,
+                0,
+                0,
+                content.layout.AbsoluteContentSize.Y+20
+            )
+
+    end)
 
 end
 
 --==================================================
--- DRAG SYSTEM
+-- HEADER ONLY DRAG SYSTEM
 --==================================================
 
-local dragging = false
+local draggingMain = false
 local dragStart
-local startPos
+local startPosition
 
-Main.InputBegan:Connect(function(input)
+Header.InputBegan:Connect(function(input)
 
     if input.UserInputType ==
         Enum.UserInputType.MouseButton1
@@ -1738,12 +2918,12 @@ Main.InputBegan:Connect(function(input)
         input.UserInputType ==
         Enum.UserInputType.Touch then
 
-        dragging = true
+        draggingMain = true
 
         dragStart =
             input.Position
 
-        startPos =
+        startPosition =
             Main.Position
 
     end
@@ -1752,14 +2932,15 @@ end)
 
 UIS.InputChanged:Connect(function(input)
 
-    if dragging and
-        (
-            input.UserInputType ==
-            Enum.UserInputType.MouseMovement
-            or
-            input.UserInputType ==
-            Enum.UserInputType.Touch
-        ) then
+    if not draggingMain then
+        return
+    end
+
+    if input.UserInputType ==
+        Enum.UserInputType.MouseMovement
+        or
+        input.UserInputType ==
+        Enum.UserInputType.Touch then
 
         local delta =
             input.Position -
@@ -1767,12 +2948,12 @@ UIS.InputChanged:Connect(function(input)
 
         Main.Position =
             UDim2.new(
-                startPos.X.Scale,
-                startPos.X.Offset +
+                startPosition.X.Scale,
+                startPosition.X.Offset+
                     delta.X,
 
-                startPos.Y.Scale,
-                startPos.Y.Offset +
+                startPosition.Y.Scale,
+                startPosition.Y.Offset+
                     delta.Y
             )
 
@@ -1788,42 +2969,72 @@ UIS.InputEnded:Connect(function(input)
         input.UserInputType ==
         Enum.UserInputType.Touch then
 
-        dragging = false
+        draggingMain = false
 
     end
 
 end)
 
 --==================================================
--- MOBILE TOGGLE + LOCK
+-- OPEN UI ANIMATION
+--==================================================
+
+local function OpenUI()
+
+    Main.Visible = true
+
+    Main.Size = UDim2.new(
+        0,
+        uiWidth*0.85,
+        0,
+        uiHeight*0.85
+    )
+
+    Main.BackgroundTransparency = 1
+
+    TweenService:Create(
+        Main,
+        TweenInfo.new(
+            0.35,
+            Enum.EasingStyle.Back,
+            Enum.EasingDirection.Out
+        ),
+        {
+            Size = UDim2.new(
+                0,
+                uiWidth,
+                0,
+                uiHeight
+            ),
+            BackgroundTransparency = 0
+        }
+    ):Play()
+
+end
+
+--==================================================
+-- MOBILE BUTTONS
 --==================================================
 
 if isMobile then
 
-    local isUnlocked = false
+    local unlocked = false
 
-    --================================================
-    -- TOGGLE BUTTON
-    --================================================
+    local ToggleBtn = Instance.new("TextButton")
 
-    local ToggleBtn =
-        Instance.new("TextButton")
+    ToggleBtn.Size = UDim2.new(
+        0,
+        90,
+        0,
+        32
+    )
 
-    ToggleBtn.Size =
-        UDim2.new(
-            0,
-            88,
-            0,
-            30
-        )
-
-    ToggleBtn.Position =
-        UDim2.new(
-            0,
-            10,
-            0,
-            150
-        )
+    ToggleBtn.Position = UDim2.new(
+        0,
+        10,
+        0,
+        150
+    )
 
     ToggleBtn.BackgroundColor3 =
         CONFIG.Accent
@@ -1833,54 +3044,50 @@ if isMobile then
     ToggleBtn.Font = CONFIG.Font
     ToggleBtn.TextSize = 10
     ToggleBtn.TextColor3 =
-        Color3.new(
-            1,
-            1,
-            1
-        )
+        Color3.new(1,1,1)
 
-    ToggleBtn.ZIndex = 999999
     ToggleBtn.AutoButtonColor = false
+    ToggleBtn.ZIndex = 999999
     ToggleBtn.Parent = ScreenGui
 
-    local toggleBtnCorner =
+    local ToggleCorner =
         Instance.new("UICorner")
 
-    toggleBtnCorner.CornerRadius =
-        UDim.new(0, 5)
+    ToggleCorner.CornerRadius =
+        UDim.new(0,6)
 
-    toggleBtnCorner.Parent =
+    ToggleCorner.Parent =
         ToggleBtn
 
     ToggleBtn.MouseButton1Click:Connect(function()
 
-        Main.Visible =
-            not Main.Visible
+        if Main.Visible then
+
+            Main.Visible = false
+
+        else
+
+            OpenUI()
+
+        end
 
     end)
 
-    --================================================
-    -- LOCK BUTTON
-    --================================================
+    local LockBtn = Instance.new("TextButton")
 
-    local LockBtn =
-        Instance.new("TextButton")
+    LockBtn.Size = UDim2.new(
+        0,
+        90,
+        0,
+        32
+    )
 
-    LockBtn.Size =
-        UDim2.new(
-            0,
-            88,
-            0,
-            30
-        )
-
-    LockBtn.Position =
-        UDim2.new(
-            0,
-            10,
-            0,
-            190
-        )
+    LockBtn.Position = UDim2.new(
+        0,
+        10,
+        0,
+        190
+    )
 
     LockBtn.BackgroundColor3 =
         CONFIG.Surface
@@ -1890,56 +3097,45 @@ if isMobile then
     LockBtn.Font = CONFIG.Font
     LockBtn.TextSize = 10
     LockBtn.TextColor3 =
-        Color3.new(
-            1,
-            1,
-            1
-        )
+        Color3.new(1,1,1)
 
-    LockBtn.ZIndex = 999999
     LockBtn.AutoButtonColor = false
+    LockBtn.ZIndex = 999999
     LockBtn.Parent = ScreenGui
 
-    local lockBtnCorner =
+    local LockCorner =
         Instance.new("UICorner")
 
-    lockBtnCorner.CornerRadius =
-        UDim.new(0, 5)
+    LockCorner.CornerRadius =
+        UDim.new(0,6)
 
-    lockBtnCorner.Parent =
+    LockCorner.Parent =
         LockBtn
 
     LockBtn.MouseButton1Click:Connect(function()
 
-        isUnlocked =
-            not isUnlocked
+        unlocked = not unlocked
 
         LockBtn.Text =
-            isUnlocked
+            unlocked
             and "Lock UI"
             or "Unlock UI"
 
         LockBtn.BackgroundColor3 =
-            isUnlocked
+            unlocked
             and CONFIG.Accent
             or CONFIG.Surface
 
     end)
 
-    --================================================
-    -- MOBILE DRAG
-    --================================================
+    local function MakeButtonDraggable(Button)
 
-    local function makeDraggable(btn)
+        local dragging = false
+        local dragStart
+        local startPos
+        local moved = false
 
-        local btnDragging = false
-
-        local btnDragStart = nil
-        local btnStartPos = nil
-
-        local hasMoved = false
-
-        btn.InputBegan:Connect(function(input)
+        Button.InputBegan:Connect(function(input)
 
             if input.UserInputType ==
                 Enum.UserInputType.MouseButton1
@@ -1947,15 +3143,14 @@ if isMobile then
                 input.UserInputType ==
                 Enum.UserInputType.Touch then
 
-                btnDragging = true
+                dragging = true
+                moved = false
 
-                hasMoved = false
-
-                btnDragStart =
+                dragStart =
                     input.Position
 
-                btnStartPos =
-                    btn.Position
+                startPos =
+                    Button.Position
 
             end
 
@@ -1963,38 +3158,38 @@ if isMobile then
 
         UIS.InputChanged:Connect(function(input)
 
-            if btnDragging and
-                (
-                    input.UserInputType ==
-                    Enum.UserInputType.MouseMovement
-                    or
-                    input.UserInputType ==
-                    Enum.UserInputType.Touch
-                ) then
+            if not dragging then
+                return
+            end
+
+            if not unlocked then
+                return
+            end
+
+            if input.UserInputType ==
+                Enum.UserInputType.MouseMovement
+                or
+                input.UserInputType ==
+                Enum.UserInputType.Touch then
 
                 local delta =
-                    input.Position -
-                    btnDragStart
+                    input.Position-
+                    dragStart
 
                 if delta.Magnitude > 3 then
-                    hasMoved = true
+                    moved = true
                 end
 
-                if isUnlocked
-                    and hasMoved then
+                Button.Position =
+                    UDim2.new(
+                        startPos.X.Scale,
+                        startPos.X.Offset+
+                            delta.X,
 
-                    btn.Position =
-                        UDim2.new(
-                            btnStartPos.X.Scale,
-                            btnStartPos.X.Offset +
-                                delta.X,
-
-                            btnStartPos.Y.Scale,
-                            btnStartPos.Y.Offset +
-                                delta.Y
-                        )
-
-                end
+                        startPos.Y.Scale,
+                        startPos.Y.Offset+
+                            delta.Y
+                    )
 
             end
 
@@ -2008,7 +3203,7 @@ if isMobile then
                 input.UserInputType ==
                 Enum.UserInputType.Touch then
 
-                btnDragging = false
+                dragging = false
 
             end
 
@@ -2016,36 +3211,37 @@ if isMobile then
 
     end
 
-    makeDraggable(
+    MakeButtonDraggable(
         ToggleBtn
     )
 
-    makeDraggable(
+    MakeButtonDraggable(
         LockBtn
     )
 
-end
+else
 
---==================================================
--- PC KEYBIND
---==================================================
-
-if isPC then
+    --==================================================
+    -- PC RIGHT SHIFT
+    --==================================================
 
     UIS.InputBegan:Connect(function(
         input,
-        gp
+        processed
     )
 
-        if gp then
+        if processed then
             return
         end
 
         if input.KeyCode ==
             Enum.KeyCode.RightShift then
 
-            Main.Visible =
-                not Main.Visible
+            if Main.Visible then
+                Main.Visible = false
+            else
+                OpenUI()
+            end
 
         end
 
@@ -2054,9 +3250,20 @@ if isPC then
 end
 
 --==================================================
--- LOADED
+-- INITIAL OPEN
 --==================================================
 
+if isPC then
+
+    task.delay(
+        0.15,
+        function()
+            OpenUI()
+        end
+    )
+
+end
+
 print(
-    "[Oishi Hub UI Library] Loaded with SMOOTH CIRCULAR COLOR WHEEL!"
+    "[Oishi Hub] Loaded - Main + Settings Edition"
 )
