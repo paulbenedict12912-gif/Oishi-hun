@@ -1,7 +1,8 @@
--- Oishi Hub UI Library Example - Two Sided with Linoria Style Color Picker
+-- Oishi Hub UI Library Example - With Rainbow Color Picker, Toggle & Lock
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
 local Player = Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui")
 local Camera = workspace.CurrentCamera
@@ -32,7 +33,22 @@ local CONFIG = {
     ClickSurface = Color3.fromRGB(35, 35, 35),
     DropdownHover = Color3.fromRGB(40, 40, 40),
     DropdownSelected = Color3.fromRGB(0, 150, 255),
+    RainbowColor = Color3.fromRGB(255, 0, 0),
 }
+
+-- Rainbow color updater
+local RainbowStep = 0
+local Hue = 0
+
+RunService.RenderStepped:Connect(function(Delta)
+    RainbowStep = RainbowStep + Delta
+    if RainbowStep >= (1 / 60) then
+        RainbowStep = 0
+        Hue = Hue + (1 / 400)
+        if Hue > 1 then Hue = 0 end
+        CONFIG.RainbowColor = Color3.fromHSV(Hue, 0.8, 1)
+    end
+end)
 
 -- Check for existing UI
 if PlayerGui:FindFirstChild("OishiHubExample") then
@@ -57,6 +73,7 @@ Main.Position = UDim2.new(0.5, -uiWidth/2, 0.5, -uiHeight/2)
 Main.BackgroundColor3 = CONFIG.Background
 Main.BorderSizePixel = 0
 Main.Active = true
+Main.Visible = isPC -- Show on PC, hidden on mobile until toggled
 Main.ZIndex = 10
 Main.Parent = ScreenGui
 
@@ -106,14 +123,17 @@ closeStroke.Transparency = 0.3
 closeStroke.Parent = CloseBtn
 
 CloseBtn.MouseButton1Click:Connect(function()
-    ScreenGui:Destroy()
+    if isPC then
+        ScreenGui:Destroy()
+    else
+        Main.Visible = false
+    end
 end)
 
 --========================
 -- TWO SIDED LAYOUT
 --========================
 
--- Left Side (Tabs + Content)
 local LeftSide = Instance.new("Frame")
 LeftSide.Size = UDim2.new(0.5, -1, 1, -30)
 LeftSide.Position = UDim2.new(0, 0, 0, 30)
@@ -122,7 +142,6 @@ LeftSide.BorderSizePixel = 0
 LeftSide.ZIndex = 11
 LeftSide.Parent = Main
 
--- Right Side
 local RightSide = Instance.new("Frame")
 RightSide.Size = UDim2.new(0.5, -1, 1, -30)
 RightSide.Position = UDim2.new(0.5, 1, 0, 30)
@@ -137,7 +156,7 @@ RightSideStroke.Thickness = 1
 RightSideStroke.Transparency = 0.5
 RightSideStroke.Parent = RightSide
 
--- Tab Frame (Left Side)
+-- Tab Frame
 local TabFrame = Instance.new("Frame")
 TabFrame.Size = UDim2.new(1, 0, 0, 26)
 TabFrame.BackgroundColor3 = CONFIG.Surface
@@ -145,7 +164,6 @@ TabFrame.BorderSizePixel = 0
 TabFrame.ZIndex = 11
 TabFrame.Parent = LeftSide
 
--- Tabs
 local Tabs = {
     {name = "Tab 1"},
     {name = "Tab 2"},
@@ -156,7 +174,6 @@ local currentTab = "Tab 1"
 local TabButtons = {}
 local TabContents = {}
 
--- Content Container (Left Side)
 local ContentContainer = Instance.new("Frame")
 ContentContainer.Size = UDim2.new(1, 0, 1, -26)
 ContentContainer.Position = UDim2.new(0, 0, 0, 26)
@@ -166,7 +183,6 @@ ContentContainer.ClipsDescendants = true
 ContentContainer.ZIndex = 11
 ContentContainer.Parent = LeftSide
 
--- Create Tabs
 for i, tab in ipairs(Tabs) do
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1/3, -1, 0, 22)
@@ -332,11 +348,7 @@ local function CreateToggle(tabName, name, default, callback)
     
     toggleBtn.MouseButton1Click:Connect(function()
         state = not state
-        
-        TweenService:Create(toggleStroke, TweenInfo.new(0.2), {
-            Transparency = state and 0.3 or 0.8
-        }):Play()
-        
+        TweenService:Create(toggleStroke, TweenInfo.new(0.2), {Transparency = state and 0.3 or 0.8}):Play()
         if state then
             TweenService:Create(toggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = CONFIG.ToggleOn}):Play()
             TweenService:Create(knob, TweenInfo.new(0.2), {Position = UDim2.new(0, 17, 0, 3)}):Play()
@@ -344,7 +356,6 @@ local function CreateToggle(tabName, name, default, callback)
             TweenService:Create(toggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = CONFIG.ToggleOff}):Play()
             TweenService:Create(knob, TweenInfo.new(0.2), {Position = UDim2.new(0, 3, 0, 3)}):Play()
         end
-        
         if callback then callback(state) end
     end)
     
@@ -398,12 +409,6 @@ local function CreateSlider(tabName, name, min, max, default, callback)
     container.BorderSizePixel = 0
     container.ZIndex = 12
     container.Parent = content.scroll
-    
-    local containerStroke = Instance.new("UIStroke")
-    containerStroke.Color = CONFIG.Border
-    containerStroke.Thickness = 1
-    containerStroke.Transparency = 0.5
-    containerStroke.Parent = container
     
     local nameLabel = Instance.new("TextLabel")
     nameLabel.Size = UDim2.new(0.55, 0, 0, 14)
@@ -485,12 +490,6 @@ local function CreateDropdown(tabName, name, options, default, callback)
     container.ZIndex = 12
     container.Parent = content.scroll
     
-    local containerStroke = Instance.new("UIStroke")
-    containerStroke.Color = CONFIG.Border
-    containerStroke.Thickness = 1
-    containerStroke.Transparency = 0.5
-    containerStroke.Parent = container
-    
     local nameLabel = Instance.new("TextLabel")
     nameLabel.Size = UDim2.new(1, -16, 0, 14)
     nameLabel.Position = UDim2.new(0, 8, 0, 4)
@@ -516,17 +515,6 @@ local function CreateDropdown(tabName, name, options, default, callback)
     dropdownBtn.AutoButtonColor = false
     dropdownBtn.Parent = container
     
-    local arrow = Instance.new("TextLabel")
-    arrow.Size = UDim2.new(0, 14, 0, 14)
-    arrow.Position = UDim2.new(1, -18, 0, 4)
-    arrow.BackgroundTransparency = 1
-    arrow.Text = "▼"
-    arrow.Font = CONFIG.Font
-    arrow.TextSize = 7
-    arrow.TextColor3 = CONFIG.Accent
-    arrow.ZIndex = 14
-    arrow.Parent = dropdownBtn
-    
     local dropdownList = Instance.new("Frame")
     dropdownList.Size = UDim2.new(1, -16, 0, 0)
     dropdownList.Position = UDim2.new(0, 8, 0, 42)
@@ -549,7 +537,6 @@ local function CreateDropdown(tabName, name, options, default, callback)
         task.wait(0.15)
         dropdownList.Visible = false
         container.Size = UDim2.new(1, 0, 0, 44)
-        TweenService:Create(arrow, TweenInfo.new(0.15), {Rotation = 0}):Play()
     end
     
     local function openDropdown()
@@ -558,7 +545,6 @@ local function CreateDropdown(tabName, name, options, default, callback)
         local listHeight = math.min(#options * 24, 120)
         TweenService:Create(dropdownList, TweenInfo.new(0.15), {Size = UDim2.new(1, -16, 0, listHeight)}):Play()
         container.Size = UDim2.new(1, 0, 0, 44 + listHeight + 4)
-        TweenService:Create(arrow, TweenInfo.new(0.15), {Rotation = 180}):Play()
     end
     
     for i, option in ipairs(options) do
@@ -577,53 +563,23 @@ local function CreateDropdown(tabName, name, options, default, callback)
         
         optionBtn.MouseButton1Click:Connect(function()
             dropdownBtn.Text = option
-            
-            for _, btn in ipairs(dropdownList:GetChildren()) do
-                if btn:IsA("TextButton") then
-                    if btn.Text == option then
-                        btn.BackgroundColor3 = CONFIG.DropdownSelected
-                        btn.BackgroundTransparency = 0.3
-                        btn.TextColor3 = Color3.new(1, 1, 1)
-                    else
-                        btn.BackgroundColor3 = CONFIG.SurfaceLight
-                        btn.BackgroundTransparency = 0.1
-                        btn.TextColor3 = CONFIG.Text
-                    end
-                end
-            end
-            
             closeDropdown()
             if callback then callback(option) end
         end)
     end
     
     dropdownBtn.MouseButton1Click:Connect(function()
-        if isOpen then
-            closeDropdown()
-        else
-            openDropdown()
-        end
+        if isOpen then closeDropdown() else openDropdown() end
     end)
     
     return container
 end
 
 --========================
--- COLOR PICKER (Linoria Style Popup)
+-- RAINBOW COLOR PICKER
 --========================
 
-local ColorPickerPopup = nil
-local isColorPickerOpen = false
-
-local function CloseColorPicker()
-    if ColorPickerPopup then
-        ColorPickerPopup:Destroy()
-        ColorPickerPopup = nil
-    end
-    isColorPickerOpen = false
-end
-
-local function CreateColorPicker(tabName, name, defaultColor, callback)
+local function CreateRainbowColorPicker(tabName, name, callback)
     local content = TabContents[tabName]
     if not content then return end
     
@@ -641,7 +597,7 @@ local function CreateColorPicker(tabName, name, defaultColor, callback)
     containerStroke.Parent = container
     
     local nameLabel = Instance.new("TextLabel")
-    nameLabel.Size = UDim2.new(0.6, 0, 0, 24)
+    nameLabel.Size = UDim2.new(0.5, 0, 0, 24)
     nameLabel.Position = UDim2.new(0, 8, 0, 5)
     nameLabel.BackgroundTransparency = 1
     nameLabel.Text = name
@@ -652,11 +608,10 @@ local function CreateColorPicker(tabName, name, defaultColor, callback)
     nameLabel.ZIndex = 13
     nameLabel.Parent = container
     
-    -- Color Preview Button
     local previewBtn = Instance.new("TextButton")
     previewBtn.Size = UDim2.new(0, 30, 0, 20)
     previewBtn.Position = UDim2.new(1, -38, 0, 7)
-    previewBtn.BackgroundColor3 = defaultColor or CONFIG.Accent
+    previewBtn.BackgroundColor3 = CONFIG.Accent
     previewBtn.BorderSizePixel = 0
     previewBtn.Text = ""
     previewBtn.AutoButtonColor = false
@@ -669,33 +624,35 @@ local function CreateColorPicker(tabName, name, defaultColor, callback)
     previewStroke.Transparency = 0
     previewStroke.Parent = previewBtn
     
-    local currentColor = defaultColor or CONFIG.Accent
+    local isRainbow = false
+    local currentColor = CONFIG.Accent
+    
+    -- Update preview with rainbow
+    RunService.RenderStepped:Connect(function()
+        if isRainbow and previewBtn.Parent then
+            previewBtn.BackgroundColor3 = CONFIG.RainbowColor
+            currentColor = CONFIG.RainbowColor
+            if callback then callback(CONFIG.RainbowColor) end
+        end
+    end)
     
     previewBtn.MouseButton1Click:Connect(function()
-        if isColorPickerOpen then
-            CloseColorPicker()
-            return
-        end
-        
-        isColorPickerOpen = true
-        
-        -- Create Popup
-        ColorPickerPopup = Instance.new("Frame")
-        ColorPickerPopup.Size = UDim2.new(0, 200, 0, 220)
-        ColorPickerPopup.Position = UDim2.new(0, previewBtn.AbsolutePosition.X - 170, 0, previewBtn.AbsolutePosition.Y - 220)
-        ColorPickerPopup.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-        ColorPickerPopup.BorderSizePixel = 0
-        ColorPickerPopup.ZIndex = 999
-        ColorPickerPopup.Parent = ScreenGui
+        local PickerPopup = Instance.new("Frame")
+        PickerPopup.Size = UDim2.new(0, 180, 0, 190)
+        PickerPopup.Position = UDim2.new(0, previewBtn.AbsolutePosition.X - 150, 0, previewBtn.AbsolutePosition.Y - 190)
+        PickerPopup.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+        PickerPopup.BorderSizePixel = 0
+        PickerPopup.ZIndex = 999
+        PickerPopup.Parent = ScreenGui
         
         local popupCorner = Instance.new("UICorner")
         popupCorner.CornerRadius = UDim.new(0, 6)
-        popupCorner.Parent = ColorPickerPopup
+        popupCorner.Parent = PickerPopup
         
         local popupStroke = Instance.new("UIStroke")
         popupStroke.Color = CONFIG.Accent
         popupStroke.Thickness = 1
-        popupStroke.Parent = ColorPickerPopup
+        popupStroke.Parent = PickerPopup
         
         -- Title
         local popupTitle = Instance.new("TextLabel")
@@ -708,16 +665,36 @@ local function CreateColorPicker(tabName, name, defaultColor, callback)
         popupTitle.TextColor3 = CONFIG.Text
         popupTitle.TextXAlignment = Enum.TextXAlignment.Left
         popupTitle.ZIndex = 1000
-        popupTitle.Parent = ColorPickerPopup
+        popupTitle.Parent = PickerPopup
         
-        -- Color Wheel Preview
+        -- Rainbow toggle
+        local rainbowBtn = Instance.new("TextButton")
+        rainbowBtn.Size = UDim2.new(1, -20, 0, 25)
+        rainbowBtn.Position = UDim2.new(0, 10, 0, 30)
+        rainbowBtn.BackgroundColor3 = isRainbow and Color3.fromRGB(0, 150, 255) or Color3.fromRGB(40, 40, 45)
+        rainbowBtn.BorderSizePixel = 0
+        rainbowBtn.Text = isRainbow and "Rainbow: ON" or "Rainbow: OFF"
+        rainbowBtn.Font = CONFIG.Font
+        rainbowBtn.TextSize = 10
+        rainbowBtn.TextColor3 = Color3.new(1, 1, 1)
+        rainbowBtn.ZIndex = 1000
+        rainbowBtn.AutoButtonColor = false
+        rainbowBtn.Parent = PickerPopup
+        
+        rainbowBtn.MouseButton1Click:Connect(function()
+            isRainbow = not isRainbow
+            rainbowBtn.Text = isRainbow and "Rainbow: ON" or "Rainbow: OFF"
+            rainbowBtn.BackgroundColor3 = isRainbow and Color3.fromRGB(0, 150, 255) or Color3.fromRGB(40, 40, 45)
+        end)
+        
+        -- Color preview circle
         local colorWheel = Instance.new("Frame")
-        colorWheel.Size = UDim2.new(0, 120, 0, 120)
-        colorWheel.Position = UDim2.new(0, 10, 0, 30)
-        colorWheel.BackgroundColor3 = currentColor
+        colorWheel.Size = UDim2.new(0, 80, 0, 80)
+        colorWheel.Position = UDim2.new(0, 50, 0, 65)
+        colorWheel.BackgroundColor3 = isRainbow and CONFIG.RainbowColor or currentColor
         colorWheel.BorderSizePixel = 0
         colorWheel.ZIndex = 1000
-        colorWheel.Parent = ColorPickerPopup
+        colorWheel.Parent = PickerPopup
         
         local wheelCorner = Instance.new("UICorner")
         wheelCorner.CornerRadius = UDim.new(1, 0)
@@ -728,92 +705,38 @@ local function CreateColorPicker(tabName, name, defaultColor, callback)
         wheelStroke.Thickness = 2
         wheelStroke.Parent = colorWheel
         
-        -- RGB Sliders
-        local function CreateRGBSlider(label, yPos, color)
-            local sliderLabel = Instance.new("TextLabel")
-            sliderLabel.Size = UDim2.new(0, 15, 0, 20)
-            sliderLabel.Position = UDim2.new(0, 135, 0, yPos)
-            sliderLabel.BackgroundTransparency = 1
-            sliderLabel.Text = label
-            sliderLabel.Font = CONFIG.Font
-            sliderLabel.TextSize = 8
-            sliderLabel.TextColor3 = color
-            sliderLabel.ZIndex = 1000
-            sliderLabel.Parent = ColorPickerPopup
-            
-            local sliderBg = Instance.new("Frame")
-            sliderBg.Size = UDim2.new(0, 50, 0, 6)
-            sliderBg.Position = UDim2.new(0, 145, 0, yPos + 7)
-            sliderBg.BackgroundColor3 = CONFIG.SurfaceLight
-            sliderBg.BorderSizePixel = 0
-            sliderBg.ZIndex = 1000
-            sliderBg.Parent = ColorPickerPopup
-            
-            local sliderFill = Instance.new("Frame")
-            sliderFill.Size = UDim2.new(1, 0, 1, 0)
-            sliderFill.BackgroundColor3 = color
-            sliderFill.BorderSizePixel = 0
-            sliderFill.ZIndex = 1001
-            sliderFill.Parent = sliderBg
-            
-            return sliderBg, sliderFill
-        end
+        -- Update wheel with rainbow
+        RunService.RenderStepped:Connect(function()
+            if isRainbow and colorWheel.Parent then
+                colorWheel.BackgroundColor3 = CONFIG.RainbowColor
+            end
+        end)
         
-        local rSlider, rFill = CreateRGBSlider("R", 30, Color3.fromRGB(255, 0, 0))
-        local gSlider, gFill = CreateRGBSlider("G", 50, Color3.fromRGB(0, 255, 0))
-        local bSlider, bFill = CreateRGBSlider("B", 70, Color3.fromRGB(0, 0, 255))
-        
-        -- Update fills based on current color
-        rFill.Size = UDim2.new(currentColor.R, 0, 1, 0)
-        gFill.Size = UDim2.new(currentColor.G, 0, 1, 0)
-        bFill.Size = UDim2.new(currentColor.B, 0, 1, 0)
-        
-        -- RGB Display
-        local rgbDisplay = Instance.new("TextLabel")
-        rgbDisplay.Size = UDim2.new(1, -20, 0, 20)
-        rgbDisplay.Position = UDim2.new(0, 10, 0, 160)
-        rgbDisplay.BackgroundTransparency = 1
-        rgbDisplay.Text = string.format("RGB: %d, %d, %d", math.floor(currentColor.R * 255), math.floor(currentColor.G * 255), math.floor(currentColor.B * 255))
-        rgbDisplay.Font = CONFIG.FontMedium
-        rgbDisplay.TextSize = 9
-        rgbDisplay.TextColor3 = CONFIG.Text
-        rgbDisplay.TextXAlignment = Enum.TextXAlignment.Center
-        rgbDisplay.ZIndex = 1000
-        rgbDisplay.Parent = ColorPickerPopup
-        
-        -- Preset Colors
-        local presetColors = {
+        -- Preset colors
+        local presets = {
             Color3.fromRGB(255, 0, 0), Color3.fromRGB(0, 255, 0), Color3.fromRGB(0, 0, 255),
             Color3.fromRGB(255, 255, 0), Color3.fromRGB(255, 0, 255), Color3.fromRGB(0, 255, 255),
-            Color3.fromRGB(255, 255, 255), Color3.fromRGB(0, 0, 0), Color3.fromRGB(255, 128, 0),
-            Color3.fromRGB(128, 0, 255),
+            Color3.fromRGB(255, 255, 255), Color3.fromRGB(0, 0, 0),
         }
         
-        for i, preset in ipairs(presetColors) do
+        for i, preset in ipairs(presets) do
             local presetBtn = Instance.new("TextButton")
             presetBtn.Size = UDim2.new(0, 16, 0, 16)
-            presetBtn.Position = UDim2.new(0, 10 + ((i - 1) % 10) * 18, 0, 185)
+            presetBtn.Position = UDim2.new(0, 10 + ((i - 1) % 8) * 20, 0, 155)
             presetBtn.BackgroundColor3 = preset
             presetBtn.BorderSizePixel = 0
             presetBtn.Text = ""
             presetBtn.AutoButtonColor = false
             presetBtn.ZIndex = 1000
-            presetBtn.Parent = ColorPickerPopup
-            
-            local presetStroke = Instance.new("UIStroke")
-            presetStroke.Color = Color3.new(1, 1, 1)
-            presetStroke.Thickness = 1
-            presetStroke.Transparency = 0.5
-            presetStroke.Parent = presetBtn
+            presetBtn.Parent = PickerPopup
             
             presetBtn.MouseButton1Click:Connect(function()
+                isRainbow = false
                 currentColor = preset
                 previewBtn.BackgroundColor3 = preset
                 colorWheel.BackgroundColor3 = preset
-                rgbDisplay.Text = string.format("RGB: %d, %d, %d", math.floor(preset.R * 255), math.floor(preset.G * 255), math.floor(preset.B * 255))
-                rFill.Size = UDim2.new(preset.R, 0, 1, 0)
-                gFill.Size = UDim2.new(preset.G, 0, 1, 0)
-                bFill.Size = UDim2.new(preset.B, 0, 1, 0)
+                rainbowBtn.Text = "Rainbow: OFF"
+                rainbowBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
                 if callback then callback(preset) end
             end)
         end
@@ -830,16 +753,15 @@ local function CreateColorPicker(tabName, name, defaultColor, callback)
         closeBtn.TextColor3 = Color3.new(1, 1, 1)
         closeBtn.ZIndex = 1000
         closeBtn.AutoButtonColor = false
-        closeBtn.Parent = ColorPickerPopup
+        closeBtn.Parent = PickerPopup
         
         closeBtn.MouseButton1Click:Connect(function()
-            CloseColorPicker()
+            PickerPopup:Destroy()
         end)
         
-        -- Auto close after 10 seconds
         task.delay(10, function()
-            if isColorPickerOpen then
-                CloseColorPicker()
+            if PickerPopup.Parent then
+                PickerPopup:Destroy()
             end
         end)
     end)
@@ -851,55 +773,23 @@ end
 -- EXAMPLE CONTENT
 --========================
 
--- TAB 1
 CreateSectionLabel("Tab 1", "TOGGLES")
-CreateToggle("Tab 1", "Toggle Test 1", false, function(state)
-    print("Toggle 1: " .. tostring(state))
-end)
-CreateToggle("Tab 1", "Toggle Test 2", true, function(state)
-    print("Toggle 2: " .. tostring(state))
-end)
+CreateToggle("Tab 1", "Toggle Test 1", false, function(state) print("Toggle 1:", state) end)
+CreateToggle("Tab 1", "Toggle Test 2", true, function(state) print("Toggle 2:", state) end)
 
 CreateSectionLabel("Tab 1", "BUTTONS")
-CreateButton("Tab 1", "Button Test 1", function()
-    print("Button 1 clicked!")
-end)
+CreateButton("Tab 1", "Button Test 1", function() print("Button clicked!") end)
 
--- TAB 2
 CreateSectionLabel("Tab 2", "SLIDERS")
-CreateSlider("Tab 2", "Slider Test 1", 0, 100, 50, function(value)
-    print("Slider 1: " .. value)
-end)
+CreateSlider("Tab 2", "Slider Test 1", 0, 100, 50, function(value) print("Slider:", value) end)
 
 CreateSectionLabel("Tab 2", "DROPDOWNS")
-CreateDropdown("Tab 2", "Dropdown Test 1", {"Option 1", "Option 2", "Option 3"}, "Option 1", function(option)
-    print("Dropdown 1: " .. option)
-end)
+CreateDropdown("Tab 2", "Dropdown Test", {"Option 1", "Option 2", "Option 3"}, "Option 1", function(option) print("Dropdown:", option) end)
 
--- TAB 3
-CreateSectionLabel("Tab 3", "MIXED")
-CreateToggle("Tab 3", "Toggle Test 3", false, function(state)
-    print("Toggle 3: " .. tostring(state))
-end)
-CreateSlider("Tab 3", "Slider Test 2", 1, 10, 5, function(value)
-    print("Slider 2: " .. value)
-end)
-CreateButton("Tab 3", "Button Test 2", function()
-    print("Button 2 clicked!")
-end)
-
-CreateSectionLabel("Tab 3", "COLOR PICKERS")
-CreateColorPicker("Tab 3", "Color Picker 1", Color3.fromRGB(255, 0, 0), function(color)
-    print("Color 1 changed:", color)
-end)
-
-CreateColorPicker("Tab 3", "Color Picker 2", Color3.fromRGB(0, 255, 0), function(color)
-    print("Color 2 changed:", color)
-end)
-
-CreateColorPicker("Tab 3", "Color Picker 3", Color3.fromRGB(0, 0, 255), function(color)
-    print("Color 3 changed:", color)
-end)
+CreateSectionLabel("Tab 3", "RAINBOW COLORS")
+CreateRainbowColorPicker("Tab 3", "Rainbow Color 1", function(color) print("Color 1:", color) end)
+CreateRainbowColorPicker("Tab 3", "Rainbow Color 2", function(color) print("Color 2:", color) end)
+CreateRainbowColorPicker("Tab 3", "Rainbow Color 3", function(color) print("Color 3:", color) end)
 
 -- Update canvas sizes
 task.wait(0.1)
@@ -918,12 +808,6 @@ Main.InputBegan:Connect(function(input)
         dragging = true
         dragStart = input.Position
         startPos = Main.Position
-        
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-            end
-        end)
     end
 end)
 
@@ -934,19 +818,28 @@ UIS.InputChanged:Connect(function(input)
     end
 end)
 
+UIS.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
+end)
+
 --========================
--- TOGGLE BUTTON (MOBILE ONLY)
+-- MOBILE TOGGLE & LOCK BUTTONS
 --========================
 if isMobile then
+    local isUnlocked = false
+    
+    -- Toggle UI Button
     local ToggleBtn = Instance.new("TextButton")
-    ToggleBtn.Size = UDim2.new(0, 24, 0, 24)
-    ToggleBtn.Position = UDim2.new(0, 6, 0.5, -12)
-    ToggleBtn.BackgroundColor3 = CONFIG.Surface
+    ToggleBtn.Size = UDim2.new(0, 88, 0, 30)
+    ToggleBtn.Position = UDim2.new(0, 10, 0, 10)
+    ToggleBtn.BackgroundColor3 = CONFIG.Accent
     ToggleBtn.BorderSizePixel = 0
-    ToggleBtn.Text = ">"
+    ToggleBtn.Text = "Toggle UI"
     ToggleBtn.Font = CONFIG.Font
-    ToggleBtn.TextSize = 12
-    ToggleBtn.TextColor3 = CONFIG.Accent
+    ToggleBtn.TextSize = 10
+    ToggleBtn.TextColor3 = Color3.new(1, 1, 1)
     ToggleBtn.ZIndex = 999999
     ToggleBtn.AutoButtonColor = false
     ToggleBtn.Parent = ScreenGui
@@ -954,13 +847,84 @@ if isMobile then
     local toggleStroke = Instance.new("UIStroke")
     toggleStroke.Color = CONFIG.Border
     toggleStroke.Thickness = 1
-    toggleStroke.Transparency = 0
     toggleStroke.Parent = ToggleBtn
     
     ToggleBtn.MouseButton1Click:Connect(function()
         Main.Visible = not Main.Visible
-        ToggleBtn.Text = Main.Visible and "X" or ">"
+    end)
+    
+    -- Lock/Unlock UI Button
+    local LockBtn = Instance.new("TextButton")
+    LockBtn.Size = UDim2.new(0, 88, 0, 30)
+    LockBtn.Position = UDim2.new(0, 10, 0, 50)
+    LockBtn.BackgroundColor3 = CONFIG.Surface
+    LockBtn.BorderSizePixel = 0
+    LockBtn.Text = "Unlock UI"
+    LockBtn.Font = CONFIG.Font
+    LockBtn.TextSize = 10
+    LockBtn.TextColor3 = Color3.new(1, 1, 1)
+    LockBtn.ZIndex = 999999
+    LockBtn.AutoButtonColor = false
+    LockBtn.Parent = ScreenGui
+    
+    local lockStroke = Instance.new("UIStroke")
+    lockStroke.Color = CONFIG.Border
+    lockStroke.Thickness = 1
+    lockStroke.Parent = LockBtn
+    
+    LockBtn.MouseButton1Click:Connect(function()
+        isUnlocked = not isUnlocked
+        LockBtn.Text = isUnlocked and "Lock UI" or "Unlock UI"
+        LockBtn.BackgroundColor3 = isUnlocked and CONFIG.Accent or CONFIG.Surface
+    end)
+    
+    -- Make buttons draggable
+    local function makeDraggable(btn)
+        local btnDragging = false
+        local btnDragStart = nil
+        local btnStartPos = nil
+        local hasMoved = false
+        
+        btn.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                btnDragging = true
+                hasMoved = false
+                btnDragStart = input.Position
+                btnStartPos = btn.Position
+            end
+        end)
+        
+        UIS.InputChanged:Connect(function(input)
+            if btnDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                local delta = input.Position - btnDragStart
+                if delta.Magnitude > 3 then
+                    hasMoved = true
+                end
+                if isUnlocked and hasMoved then
+                    btn.Position = UDim2.new(btnStartPos.X.Scale, btnStartPos.X.Offset + delta.X, btnStartPos.Y.Scale, btnStartPos.Y.Offset + delta.Y)
+                end
+            end
+        end)
+        
+        UIS.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                btnDragging = false
+            end
+        end)
+    end
+    
+    makeDraggable(ToggleBtn)
+    makeDraggable(LockBtn)
+end
+
+-- PC Keybind
+if isPC then
+    UIS.InputBegan:Connect(function(input, gp)
+        if gp then return end
+        if input.KeyCode == Enum.KeyCode.RightShift then
+            Main.Visible = not Main.Visible
+        end
     end)
 end
 
-print("[Oishi Hub UI Library] Loaded with Linoria Style Color Picker!")
+print("[Oishi Hub UI Library] Loaded with Rainbow Color Picker, Toggle & Lock!")
