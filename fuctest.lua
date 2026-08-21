@@ -1,5 +1,5 @@
 -- Oishi Hub v1.02 - Private UI (LocalScript) with Auto-Execute
--- UPDATED: Dropdowns open below button
+-- FINAL: Tabs at top, left/right content areas
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
@@ -264,30 +264,14 @@ CloseBtn.MouseButton1Click:Connect(function()
     CloseUI()
 end)
 
--- Two sided layout
-local LeftSide = Instance.new("Frame")
-LeftSide.Size = UDim2.new(0.5, -1, 1, -30)
-LeftSide.Position = UDim2.new(0, 0, 0, 30)
-LeftSide.BackgroundColor3 = CONFIG.Background
-LeftSide.BorderSizePixel = 0
-LeftSide.ZIndex = 11
-LeftSide.Parent = Main
-
-local RightSide = Instance.new("Frame")
-RightSide.Size = UDim2.new(0.5, -1, 1, -30)
-RightSide.Position = UDim2.new(0.5, 1, 0, 30)
-RightSide.BackgroundColor3 = CONFIG.Surface
-RightSide.BorderSizePixel = 0
-RightSide.ZIndex = 11
-RightSide.Parent = Main
-
--- Tabs
+-- Tabs (Full width at top)
 local TabFrame = Instance.new("Frame")
 TabFrame.Size = UDim2.new(1, 0, 0, 26)
+TabFrame.Position = UDim2.new(0, 0, 0, 30)
 TabFrame.BackgroundColor3 = CONFIG.Surface
 TabFrame.BorderSizePixel = 0
 TabFrame.ZIndex = 11
-TabFrame.Parent = LeftSide
+TabFrame.Parent = Main
 
 local Tabs = {
     {name = "Ragebot"},
@@ -300,14 +284,32 @@ local currentTab = "Ragebot"
 local TabButtons = {}
 local TabContents = {}
 
+-- Content container below tabs (full width)
 local ContentContainer = Instance.new("Frame")
-ContentContainer.Size = UDim2.new(1, 0, 1, -26)
-ContentContainer.Position = UDim2.new(0, 0, 0, 26)
+ContentContainer.Size = UDim2.new(1, 0, 1, -56)
+ContentContainer.Position = UDim2.new(0, 0, 0, 56)
 ContentContainer.BackgroundTransparency = 1
 ContentContainer.BorderSizePixel = 0
 ContentContainer.ClipsDescendants = true
 ContentContainer.ZIndex = 11
-ContentContainer.Parent = LeftSide
+ContentContainer.Parent = Main
+
+-- Left and right content areas
+local LeftContent = Instance.new("Frame")
+LeftContent.Size = UDim2.new(0.5, -1, 1, 0)
+LeftContent.Position = UDim2.new(0, 0, 0, 0)
+LeftContent.BackgroundColor3 = CONFIG.Background
+LeftContent.BorderSizePixel = 0
+LeftContent.ZIndex = 11
+LeftContent.Parent = ContentContainer
+
+local RightContent = Instance.new("Frame")
+RightContent.Size = UDim2.new(0.5, -1, 1, 0)
+RightContent.Position = UDim2.new(0.5, 1, 0, 0)
+RightContent.BackgroundColor3 = CONFIG.Surface
+RightContent.BorderSizePixel = 0
+RightContent.ZIndex = 11
+RightContent.Parent = ContentContainer
 
 for i, tab in ipairs(Tabs) do
     local btn = Instance.new("TextButton")
@@ -326,41 +328,59 @@ for i, tab in ipairs(Tabs) do
     
     TabButtons[tab.name] = btn
     
-    local content = Instance.new("Frame")
-    content.Size = UDim2.new(1, 0, 1, 0)
-    content.BackgroundTransparency = 1
-    content.BorderSizePixel = 0
-    content.Visible = tab.name == currentTab
-    content.ZIndex = 11
-    content.Parent = ContentContainer
+    local leftScroll = Instance.new("ScrollingFrame")
+    leftScroll.Size = UDim2.new(1, 0, 1, 0)
+    leftScroll.BackgroundTransparency = 1
+    leftScroll.BorderSizePixel = 0
+    leftScroll.ScrollBarThickness = 3
+    leftScroll.ScrollBarImageColor3 = CONFIG.Accent
+    leftScroll.ScrollBarImageTransparency = 0.3
+    leftScroll.CanvasSize = UDim2.new(0, 0, 0, 400)
+    leftScroll.ZIndex = 12
+    leftScroll.Visible = tab.name == currentTab
+    leftScroll.Parent = LeftContent
     
-    local scroll = Instance.new("ScrollingFrame")
-    scroll.Size = UDim2.new(1, 0, 1, 0)
-    scroll.BackgroundTransparency = 1
-    scroll.BorderSizePixel = 0
-    scroll.ScrollBarThickness = 3
-    scroll.ScrollBarImageColor3 = CONFIG.Accent
-    scroll.ScrollBarImageTransparency = 0.3
-    scroll.CanvasSize = UDim2.new(0, 0, 0, 400)
-    scroll.ZIndex = 12
-    scroll.Parent = content
+    local leftLayout = Instance.new("UIListLayout")
+    leftLayout.Padding = UDim.new(0, 6)
+    leftLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    leftLayout.Parent = leftScroll
     
-    local layout = Instance.new("UIListLayout")
-    layout.Padding = UDim.new(0, 6)
-    layout.SortOrder = Enum.SortOrder.LayoutOrder
-    layout.Parent = scroll
+    local leftPadding = Instance.new("UIPadding")
+    leftPadding.PaddingTop = UDim.new(0, 10)
+    leftPadding.PaddingLeft = UDim.new(0, 10)
+    leftPadding.PaddingRight = UDim.new(0, 10)
+    leftPadding.PaddingBottom = UDim.new(0, 10)
+    leftPadding.Parent = leftScroll
     
-    local padding = Instance.new("UIPadding")
-    padding.PaddingTop = UDim.new(0, 10)
-    padding.PaddingLeft = UDim.new(0, 10)
-    padding.PaddingRight = UDim.new(0, 10)
-    padding.PaddingBottom = UDim.new(0, 10)
-    padding.Parent = scroll
+    local rightScroll = Instance.new("ScrollingFrame")
+    rightScroll.Size = UDim2.new(1, 0, 1, 0)
+    rightScroll.BackgroundTransparency = 1
+    rightScroll.BorderSizePixel = 0
+    rightScroll.ScrollBarThickness = 3
+    rightScroll.ScrollBarImageColor3 = CONFIG.Accent
+    rightScroll.ScrollBarImageTransparency = 0.3
+    rightScroll.CanvasSize = UDim2.new(0, 0, 0, 400)
+    rightScroll.ZIndex = 12
+    rightScroll.Visible = tab.name == currentTab
+    rightScroll.Parent = RightContent
+    
+    local rightLayout = Instance.new("UIListLayout")
+    rightLayout.Padding = UDim.new(0, 6)
+    rightLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    rightLayout.Parent = rightScroll
+    
+    local rightPadding = Instance.new("UIPadding")
+    rightPadding.PaddingTop = UDim.new(0, 10)
+    rightPadding.PaddingLeft = UDim.new(0, 10)
+    rightPadding.PaddingRight = UDim.new(0, 10)
+    rightPadding.PaddingBottom = UDim.new(0, 10)
+    rightPadding.Parent = rightScroll
     
     TabContents[tab.name] = {
-        frame = content,
-        scroll = scroll,
-        layout = layout,
+        leftScroll = leftScroll,
+        rightScroll = rightScroll,
+        leftLayout = leftLayout,
+        rightLayout = rightLayout,
     }
     
     btn.MouseButton1Click:Connect(function()
@@ -385,55 +405,27 @@ for i, tab in ipairs(Tabs) do
             end
         end
         
-        local oldContent = TabContents[oldTab]
-        local newContent = TabContents[tab.name]
+        TabContents[oldTab].leftScroll.Visible = false
+        TabContents[oldTab].rightScroll.Visible = false
         
-        if oldContent and newContent then
-            oldContent.frame.Visible = false
-            newContent.frame.Visible = true
-            
-            local scale = newContent.frame:FindFirstChild("TabScale")
-            if not scale then
-                scale = Instance.new("UIScale")
-                scale.Name = "TabScale"
-                scale.Scale = 0.96
-                scale.Parent = newContent.frame
-            end
-            
-            tween(scale, ANIM.TabTime, {Scale = 1}):Play()
-        end
+        TabContents[tab.name].leftScroll.Visible = true
+        TabContents[tab.name].rightScroll.Visible = true
     end)
 end
 
 -- UI Components
-local function CreateSectionLabel(tabName, text)
+local function CreateToggle(tabName, name, default, callback, side)
     local content = TabContents[tabName]
     if not content then return end
     
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, 0, 0, 20)
-    label.BackgroundTransparency = 1
-    label.Text = text
-    label.Font = CONFIG.Font
-    label.TextSize = 9
-    label.TextColor3 = CONFIG.Accent
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.ZIndex = 13
-    label.Parent = content.scroll
-    
-    return label
-end
-
-local function CreateToggle(tabName, name, default, callback)
-    local content = TabContents[tabName]
-    if not content then return end
+    local targetScroll = side == "right" and content.rightScroll or content.leftScroll
     
     local container = Instance.new("Frame")
     container.Size = UDim2.new(1, 0, 0, 34)
     container.BackgroundColor3 = CONFIG.Surface
     container.BorderSizePixel = 0
     container.ZIndex = 12
-    container.Parent = content.scroll
+    container.Parent = targetScroll
     
     local label = Instance.new("TextLabel")
     label.Size = UDim2.new(0.65, 0, 0, 14)
@@ -492,9 +484,11 @@ local function CreateToggle(tabName, name, default, callback)
     return container
 end
 
-local function CreateSlider(tabName, name, min, max, default, callback)
+local function CreateSlider(tabName, name, min, max, default, callback, side)
     local content = TabContents[tabName]
     if not content then return end
+    
+    local targetScroll = side == "right" and content.rightScroll or content.leftScroll
     
     local container = Instance.new("Frame")
     container.Size = UDim2.new(1, 0, 0, 44)
@@ -502,7 +496,7 @@ local function CreateSlider(tabName, name, min, max, default, callback)
     container.BorderSizePixel = 0
     container.Active = true
     container.ZIndex = 12
-    container.Parent = content.scroll
+    container.Parent = targetScroll
     
     local label = Instance.new("TextLabel")
     label.Size = UDim2.new(0.55, 0, 0, 14)
@@ -633,17 +627,18 @@ local function CreateSlider(tabName, name, min, max, default, callback)
     return container
 end
 
--- Updated Dropdown that opens BELOW the button
-local function CreateDropdown(tabName, name, options, default, callback)
+local function CreateDropdown(tabName, name, options, default, callback, side)
     local content = TabContents[tabName]
     if not content then return end
+    
+    local targetScroll = side == "right" and content.rightScroll or content.leftScroll
     
     local container = Instance.new("Frame")
     container.Size = UDim2.new(1, 0, 0, 34)
     container.BackgroundColor3 = CONFIG.Surface
     container.BorderSizePixel = 0
     container.ZIndex = 30
-    container.Parent = content.scroll
+    container.Parent = targetScroll
     
     local label = Instance.new("TextLabel")
     label.Size = UDim2.new(0.45, 0, 1, 0)
@@ -708,7 +703,6 @@ local function CreateDropdown(tabName, name, options, default, callback)
         opened = true
         tween(arrow, ANIM.DropdownTime, {Rotation = 180}):Play()
         
-        -- Create popup outside the UI
         dropdownPopup = Instance.new("Frame")
         dropdownPopup.Size = UDim2.new(0, 200, 0, 0)
         dropdownPopup.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
@@ -727,7 +721,6 @@ local function CreateDropdown(tabName, name, options, default, callback)
         popupStroke.Transparency = 0.2
         popupStroke.Parent = dropdownPopup
         
-        -- Position popup BELOW the button
         local btnPos = button.AbsolutePosition
         local btnSize = button.AbsoluteSize
         local screenSize = Camera.ViewportSize
@@ -737,11 +730,9 @@ local function CreateDropdown(tabName, name, options, default, callback)
         local maxHeight = math.min(totalHeight, 300)
         
         local popupX = btnPos.X
-        local popupY = btnPos.Y + btnSize.Y + 5  -- Always below the button
+        local popupY = btnPos.Y + btnSize.Y + 5
         
-        -- Check if popup goes off screen at the bottom
         if popupY + maxHeight > screenSize.Y - 10 then
-            -- If it goes off bottom, try to open above
             popupY = btnPos.Y - maxHeight - 5
         end
         
@@ -759,12 +750,10 @@ local function CreateDropdown(tabName, name, options, default, callback)
         
         dropdownPopup.Position = UDim2.new(0, popupX, 0, popupY)
         
-        -- Animate open
         tween(dropdownPopup, ANIM.DropdownTime, {
             Size = UDim2.new(0, 200, 0, maxHeight)
         }):Play()
         
-        -- Create scrolling frame for options
         local scrollFrame = Instance.new("ScrollingFrame")
         scrollFrame.Size = UDim2.new(1, 0, 1, 0)
         scrollFrame.BackgroundTransparency = 1
@@ -780,7 +769,6 @@ local function CreateDropdown(tabName, name, options, default, callback)
         listLayout.SortOrder = Enum.SortOrder.LayoutOrder
         listLayout.Parent = scrollFrame
         
-        -- Create option buttons
         for _, option in ipairs(options) do
             local optionButton = Instance.new("TextButton")
             optionButton.Size = UDim2.new(1, -8, 0, optionHeight - 5)
@@ -829,7 +817,6 @@ local function CreateDropdown(tabName, name, options, default, callback)
         end
     end)
     
-    -- Close dropdown when clicking outside
     UIS.InputBegan:Connect(function(input)
         if opened and dropdownPopup then
             if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -859,16 +846,18 @@ local function CreateDropdown(tabName, name, options, default, callback)
     return container
 end
 
-local function CreateColorPicker(tabName, name, defaultColor, callback)
+local function CreateColorPicker(tabName, name, defaultColor, callback, side)
     local content = TabContents[tabName]
     if not content then return end
+    
+    local targetScroll = side == "right" and content.rightScroll or content.leftScroll
     
     local container = Instance.new("Frame")
     container.Size = UDim2.new(1, 0, 0, 34)
     container.BackgroundColor3 = CONFIG.Surface
     container.BorderSizePixel = 0
     container.ZIndex = 12
-    container.Parent = content.scroll
+    container.Parent = targetScroll
     
     local label = Instance.new("TextLabel")
     label.Size = UDim2.new(0.5, 0, 0, 24)
@@ -2357,50 +2346,58 @@ local function OnAnimationPresetChanged(preset)
     end
 end
 
+local function OnAnimationSpeedChange(value)
+    SaveData.AnimationSpeed = value
+    SaveSettings()
+    animPlayer.speed = value
+end
+
 --========================
 -- CREATE UI ELEMENTS
 --========================
--- Ragebot Tab
-CreateToggle("Ragebot", "Ragebot", SaveData.Ragebot, ToggleWallbang)
-CreateToggle("Ragebot", "Auto Shoot", SaveData.AutoShoot, ToggleAutoShoot)
-CreateSlider("Ragebot", "Shoot Delay", 0.0005, 5, SaveData.AutoShootDelay, OnAutoShootDelay)
-CreateToggle("Ragebot", "Rapid Fire", SaveData.RapidFire, ToggleRapidFire)
+-- Ragebot Tab (All left)
+CreateToggle("Ragebot", "Ragebot", SaveData.Ragebot, ToggleWallbang, "left")
+CreateToggle("Ragebot", "Auto Shoot", SaveData.AutoShoot, ToggleAutoShoot, "left")
+CreateSlider("Ragebot", "Shoot Delay", 0.0005, 5, SaveData.AutoShootDelay, OnAutoShootDelay, "left")
+CreateToggle("Ragebot", "Rapid Fire", SaveData.RapidFire, ToggleRapidFire, "left")
 
--- ESP Tab
-CreateToggle("ESP", "Enable ESP", SaveData.Esp, ToggleEsp)
-CreateToggle("ESP", "Box ESP", SaveData.EspBoxes, ToggleEspBoxes)
-CreateColorPicker("ESP", "Box Color", SaveData.EspBoxColor, OnEspBoxColorChange)
-CreateToggle("ESP", "Box Outline", SaveData.EspBoxOutline, ToggleEspBoxOutline)
-CreateToggle("ESP", "Health Bar ESP", SaveData.EspHealth, ToggleEspHealth)
-CreateColorPicker("ESP", "Health Color", SaveData.EspHealthColor, OnEspHealthColorChange)
-CreateToggle("ESP", "Name ESP", SaveData.EspNames, ToggleEspNames)
-CreateColorPicker("ESP", "Name Color", SaveData.EspNameColor, OnEspNameColorChange)
-CreateToggle("ESP", "Health Number", SaveData.EspHealthNumber, ToggleEspHealthNumber)
-CreateColorPicker("ESP", "Health Number Color", SaveData.EspHealthNumberColor, OnEspHealthNumberColorChange)
-CreateToggle("ESP", "Distance ESP", SaveData.EspDistance, ToggleEspDistance)
-CreateColorPicker("ESP", "Distance Color", SaveData.EspDistanceColor, OnEspDistanceColorChange)
-CreateToggle("ESP", "Tracer ESP", SaveData.EspTracers, ToggleEspTracers)
-CreateColorPicker("ESP", "Tracer Color", SaveData.EspTracerColor, OnEspTracerColorChange)
+-- ESP Tab (All left)
+CreateToggle("ESP", "Enable ESP", SaveData.Esp, ToggleEsp, "left")
+CreateToggle("ESP", "Box ESP", SaveData.EspBoxes, ToggleEspBoxes, "left")
+CreateColorPicker("ESP", "Box Color", SaveData.EspBoxColor, OnEspBoxColorChange, "left")
+CreateToggle("ESP", "Box Outline", SaveData.EspBoxOutline, ToggleEspBoxOutline, "left")
+CreateToggle("ESP", "Health Bar ESP", SaveData.EspHealth, ToggleEspHealth, "left")
+CreateColorPicker("ESP", "Health Color", SaveData.EspHealthColor, OnEspHealthColorChange, "left")
+CreateToggle("ESP", "Name ESP", SaveData.EspNames, ToggleEspNames, "left")
+CreateColorPicker("ESP", "Name Color", SaveData.EspNameColor, OnEspNameColorChange, "left")
+CreateToggle("ESP", "Health Number", SaveData.EspHealthNumber, ToggleEspHealthNumber, "left")
+CreateColorPicker("ESP", "Health Number Color", SaveData.EspHealthNumberColor, OnEspHealthNumberColorChange, "left")
+CreateToggle("ESP", "Distance ESP", SaveData.EspDistance, ToggleEspDistance, "left")
+CreateColorPicker("ESP", "Distance Color", SaveData.EspDistanceColor, OnEspDistanceColorChange, "left")
+CreateToggle("ESP", "Tracer ESP", SaveData.EspTracers, ToggleEspTracers, "left")
+CreateColorPicker("ESP", "Tracer Color", SaveData.EspTracerColor, OnEspTracerColorChange, "left")
 
--- Misc Tab
-CreateToggle("Misc", "Fly", SaveData.Fly, ToggleFly)
-CreateSlider("Misc", "Fly Speed", 1, 500, SaveData.FlySpeed, OnFlySpeed)
-CreateToggle("Misc", "Infinite Jump", SaveData.InfiniteJump, ToggleInfiniteJump)
-CreateToggle("Misc", "Noclip", SaveData.Noclip, ToggleNoclip)
+-- Misc Tab (Fly left, Infinite Jump/Noclip right)
+CreateToggle("Misc", "Fly", SaveData.Fly, ToggleFly, "left")
+CreateSlider("Misc", "Fly Speed", 1, 500, SaveData.FlySpeed, OnFlySpeed, "left")
+CreateToggle("Misc", "Infinite Jump", SaveData.InfiniteJump, ToggleInfiniteJump, "right")
+CreateToggle("Misc", "Noclip", SaveData.Noclip, ToggleNoclip, "right")
 
--- Animation Tab
-CreateToggle("Animation", "Enable Animation", SaveData.AnimationEnabled, ToggleAnimation)
+-- Animation Tab (All left)
+CreateToggle("Animation", "Enable Animation", SaveData.AnimationEnabled, ToggleAnimation, "left")
+CreateSlider("Animation", "Animation Speed", 1, 500, SaveData.AnimationSpeed, OnAnimationSpeedChange, "left")
 CreateDropdown("Animation", "Anim Preset", {
     "Underground Glitch", "Orbit", "Tweaking", "Kicking Feet",
     "Low Cortisol", "Floss", "Take the L", "Upside Down",
     "Michael Myers Shake", "Headless", "Wall Peek L", "Glitch Through",
     "Spin",
-}, SaveData.AnimationPreset, OnAnimationPresetChanged)
+}, SaveData.AnimationPreset, OnAnimationPresetChanged, "left")
 
 -- Update canvas sizes
 task.wait(0.1)
 for _, content in pairs(TabContents) do
-    content.scroll.CanvasSize = UDim2.new(0, 0, 0, content.layout.AbsoluteContentSize.Y + 20)
+    content.leftScroll.CanvasSize = UDim2.new(0, 0, 0, content.leftLayout.AbsoluteContentSize.Y + 20)
+    content.rightScroll.CanvasSize = UDim2.new(0, 0, 0, content.rightLayout.AbsoluteContentSize.Y + 20)
 end
 
 --========================
@@ -2505,4 +2502,4 @@ SetupAutoExecute()
 -- Open UI on first load
 OpenUI()
 
-print("[Oishi Hub V1.02] Loaded! Dropdowns open below button!")
+print("[Oishi Hub V1.02] Loaded! Tabs at top, left/right content!")
