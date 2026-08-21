@@ -1,207 +1,74 @@
-local repS = cloneref(game:GetService("ReplicatedStorage"))
-local plrs = cloneref(game:GetService("Players"))
-local runS = cloneref(game:GetService("RunService"))
-local ws = cloneref(game:GetService("Workspace"))
-local uis = cloneref(game:GetService("UserInputService"))
-local lplr = plrs.LocalPlayer
-local util = require(repS.Modules.Utility)
-local enum = require(repS.Modules.EnumLibrary)
-local FighterController = require(lplr.PlayerScripts.Controllers.FighterController)
-local SpectateController = require(lplr.PlayerScripts.Controllers:WaitForChild("SpectateController"))
-
 getgenv().Config = {
-    Enabled = true,
-    FireRate = 0.0005,
-    WeaponSlot = "Melee" -- Options: "Primary", "Secondary", "Melee"
+    HitPart = "Head",
+    FOVRadius = 300,
+    ShowFOV = true
 }
 
-local slots = {
-    Primary = 1,
-    Secondary = 2,
-    Melee = 3
-}
+local phem1_plrs = game:GetService("Players")
+local phem2_cs = game:GetService("CollectionService")
+local phem5 = game:GetService("ReplicatedStorage")
+local phem6 = phem1_plrs.LocalPlayer
+local phem7 = require(phem5.Modules.Utility)
+local phem8 = phem7.Raycast
 
-local function getSlotNumber()
-    return slots[getgenv().Config.WeaponSlot] or 3
-end
+local phem4 = Drawing.new("Circle")
+phem4.Visible = getgenv().Config.ShowFOV
+phem4.Radius = getgenv().Config.FOVRadius
+phem4.Color = Color3.fromRGB(255, 255, 255)
+phem4.Thickness = 1
+phem4.Filled = false
 
-task.spawn(function()
-    local localFighter = FighterController.LocalFighter
-    while not localFighter do
-        task.wait(0.1)
-        localFighter = FighterController.LocalFighter
-    end
-    pcall(function()
-        localFighter:EquipItem(getSlotNumber())
-    end)
+game:GetService("RunService").RenderStepped:Connect(function()
+    phem4.Position = workspace.CurrentCamera.ViewportSize / 2
+    phem4.Radius = getgenv().Config.FOVRadius
+    phem4.Visible = getgenv().Config.ShowFOV
 end)
 
-task.spawn(function()
-    while true do
-        task.wait(1)
-        if not getgenv().Config.Enabled then continue end
-        local localFighter = FighterController.LocalFighter
-        if localFighter then
-            pcall(function()
-                localFighter:EquipItem(getSlotNumber())
-            end)
+local function phem9()
+    local phem10 = Vector2.new(workspace.CurrentCamera.ViewportSize.X / 2, workspace.CurrentCamera.ViewportSize.Y / 2)
+    local phem11 = nil
+    local phem12 = getgenv().Config.FOVRadius
+    for phem13, phem14 in phem2_cs:GetTagged("Entity") do
+        if phem14 == phem6.Character then 
+            continue 
+        end
+        local phem15 = phem14:FindFirstChild(getgenv().Config.HitPart, true)
+        if not phem15 or not phem15:IsA("BasePart") then 
+            continue 
+        end
+        local phem16, phem17 = workspace.CurrentCamera:WorldToViewportPoint(phem15.Position)
+        if not phem17 then 
+            continue 
+        end
+        local phem18 = (phem10 - Vector2.new(phem16.X, phem16.Y)).Magnitude
+        if phem18 < phem12 then
+            phem12 = phem18
+            phem11 = phem15
         end
     end
-end)
-
-local lastFire = 0
-local deflecting = {}
-plrs.PlayerRemoving:Connect(function(player)
-    deflecting[player] = nil
-end)
-
-local function updateDeflection()
-    if not FighterController or not FighterController.Objects then return end
-    for _, fighterObj in FighterController.Objects do
-        local player = fighterObj.Player
-        if not player then continue end
-        if not fighterObj.Entity or not fighterObj.Entity:IsAlive() or fighterObj:Get("IsSpectating") then
-            deflecting[player] = false
-            continue
-        end
-        local equipped = fighterObj.EquippedItem
-        local isKatana = equipped and equipped.ViewModel and equipped.ViewModel.Name == "Katana"
-        local isDeflecting = false
-        if isKatana then
-            isDeflecting = (equipped._attack_cooldown and equipped._attack_cooldown > tick()) or false
-        end
-        deflecting[player] = isDeflecting
-    end
+    return phem11
 end
 
-local function isEnemy(player)
-    if player == lplr then return false end
-    local duel = SpectateController.CurrentDuelSubject
-    local localDueler = duel and duel:GetDueler(lplr)
-    local localTeam = localDueler and localDueler:Get("TeamID") or nil
-    if localTeam and duel and duel.Duelers then
-        for _, dueler in duel.Duelers do
-            if dueler.Player == player then
-                local team = dueler:Get("TeamID")
-                return team ~= localTeam
-            end
-        end
+phem7.Raycast = function(self, phem19, phem20, phem21, phem22, phem23, phem24)
+    if type(phem21) ~= "number" or phem21 < 100 then
+        return phem8(self, phem19, phem20, phem21, phem22, phem23, phem24)
     end
-    local pTeam = player:GetAttribute("TeamID")
-    local lTeam = lplr:GetAttribute("TeamID")
-    if pTeam and lTeam then
-        return pTeam ~= lTeam
+    local phem25 = phem9()
+    if not phem25 then
+        return phem8(self, phem19, phem20, phem21, phem22, phem23, phem24)
     end
-    return true
-end
-
-local function getClosestTarget()
-    local char = lplr.Character
-    if not char then return nil, nil, nil end
-    local myRoot = char:FindFirstChild("HumanoidRootPart")
-    if not myRoot then return nil, nil, nil end
-    local closestPlayer = nil
-    local closestRoot = nil
-    local closestHead = nil
-    local closestDist = 500
-    for _, player in plrs:GetPlayers() do
-        if not isEnemy(player) then continue end
-        local pChar = player.Character
-        if not pChar then continue end
-        local pRoot = pChar:FindFirstChild("HumanoidRootPart")
-        local pHead = pChar:FindFirstChild("Head")
-        local pHum = pChar:FindFirstChildWhichIsA("Humanoid")
-        if not (pRoot and pHead and pHum and pHum.Health > 0) then continue end
-        local dist = (myRoot.Position - pRoot.Position).Magnitude
-        if dist < closestDist then
-            closestDist = dist
-            closestPlayer = player
-            closestRoot = pRoot
-            closestHead = pHead
-        end
+    local phem26 = phem25.Position
+    local phem27 = (phem26 - phem19).Unit
+    local phem28 = (phem26 - phem19).Magnitude
+    if phem28 > phem21 then
+        phem28 = phem21
+        phem26 = phem19 + (phem27 * phem21)
     end
-    return closestPlayer, closestRoot, closestHead
-end
-
-local function hasKnifeViewModel(targetPlayer)
-    if not targetPlayer then return false end
-    local viewModels = ws:FindFirstChild("ViewModels")
-    if not viewModels then return false end
-    local targetName = targetPlayer.Name
-    for _, model in viewModels:GetChildren() do
-        if model:IsA("Model") 
-           and string.find(model.Name, targetName, 1, true) 
-           and string.find(model.Name, "Knife", 1, true) then
-            return true
-        end
-    end
-    return false
-end
-
-runS.Heartbeat:Connect(function()
-    updateDeflection()
-    local targetPlayer, targetRoot, targetHead = getClosestTarget()
-    local desyncCF = nil
-    
-    if targetRoot and targetHead then
-        local desyncPos
-        if hasKnifeViewModel(targetPlayer) then
-            desyncPos = (targetRoot.CFrame * CFrame.new(0, 6, 0)).Position
-        else
-            desyncPos = (targetRoot.CFrame * CFrame.new(0, 1, 2)).Position
-        end
-        desyncCF = CFrame.lookAt(desyncPos, targetHead.Position)
-    end
-
-    if desyncCF and lplr.Character then
-        local myRoot = lplr.Character:FindFirstChild("HumanoidRootPart")
-        if myRoot then
-            local oldCF = myRoot.CFrame
-            local oldVel = myRoot.Velocity
-            local oldRotVel = myRoot.RotVelocity
-            myRoot.CFrame = desyncCF
-            runS:BindToRenderStep("__restore", 101, function()
-                if myRoot then
-                    myRoot.CFrame = oldCF
-                    myRoot.Velocity = oldVel
-                    myRoot.RotVelocity = oldRotVel
-                end
-                runS:UnbindFromRenderStep("__restore")
-            end)
-        end
-    end
-
-    if not getgenv().Config.Enabled then return end
-    if not targetPlayer or not targetHead or not targetRoot then return end
-    if deflecting[targetPlayer] then return end
-    if not lplr.Character or not lplr.Character:FindFirstChild("HumanoidRootPart") then return end
-    if not FighterController or not FighterController.LocalFighter then return end
-    local item = FighterController.LocalFighter.EquippedItem
-    if not item then return end
-    if tick() - lastFire < getgenv().Config.FireRate then return end
-    lastFire = tick()
-    local originPos = desyncCF and desyncCF.Position or targetRoot.Position
-    local targetPos = targetHead.Position
-    local aimCF = CFrame.lookAt(originPos, targetPos)
-    local targetCF = targetHead.CFrame
-    local randomOffset = Vector3.new(
-        (math.random() - 0.5) * 0.1,
-        (math.random() - 0.5) * 0.1,
-        (math.random() - 0.5) * 0.1
-    )
-    local aimedPos = targetPos + randomOffset
-    local objSpaceHeadOffset = targetHead.CFrame:ToObjectSpace(CFrame.new(aimedPos))
-    local cameradata = {}
-    cameradata[utf8.char(1)] = {
-        [utf8.char(0)] = util:EncodeCFrame(aimCF),
-        [utf8.char(1)] = util:EncodeCFrame(targetCF),
-        [utf8.char(2)] = targetHead,
-        [utf8.char(3)] = util:EncodeCFrame(objSpaceHeadOffset)
+    return {
+        Position = phem26,
+        Distance = phem28,
+        Instance = phem25,
+        Material = phem25.Material,
+        Normal = -phem27
     }
-    repS.Remotes.Replication.Fighter.UseItem:FireServer(
-        item:Get("ObjectID"),
-        enum:ToEnum("StartShooting"),
-        cameradata,
-        nil
-    )
-end)
+end
