@@ -62,13 +62,9 @@ local SaveData = {
     AimbotTargetPart = "Head",
     AimbotFovRadius = 500,
     AimbotSmoothness = 2,
-    AimbotAimCurve = "Linear",
-    AimbotFollowMuzzle = false,
     AimbotTeamCheck = true,
     AimbotAliveCheck = true,
-    AimbotWallCheck = false,
     AimbotCheckForceField = true,
-    AimbotCheckAttachment = true,
 }
 
 local function LoadSettings()
@@ -636,44 +632,20 @@ local function CreateDropdown(tabName, name, saveKey, options, onChange)
 end
 
 --========================
--- FULL INSTANCE AIMBOT
+-- SIMPLE AIMBOT (Works on Mobile)
 --========================
 local aimbot = {
     enabled = false,
-    masterEnabled = false,
     showFov = false,
     targetPart = "Head",
     fovRadius = 500,
     smoothness = 2,
-    aimCurve = "Linear",
-    followMuzzle = false,
-    lockedTarget = nil,
-    smoothCF = nil,
     teamCheck = true,
     aliveCheck = true,
-    wallCheck = false,
     checkForceField = true,
-    checkAttachment = true,
 }
 
-local aimbotFOVCfg = {
-    OutlineColor1 = Color3.fromRGB(255, 255, 255),
-    OutlineColor2 = Color3.fromRGB(255, 255, 255),
-    OutlineRotation = 0,
-    OutlineThickness = 1.5,
-    OutlineTransparency = 0,
-    FilledEnabled = false,
-    FilledColor1 = Color3.fromRGB(255, 255, 255),
-    FilledColor2 = Color3.fromRGB(0, 0, 0),
-    FilledRotation = 0,
-    FilledTransparency = 0.7,
-    FilledAnimated = false,
-    FilledSpeed = 1,
-    SpinOn = false,
-    SpinSpd = 1,
-}
-
--- Build FOV
+-- Build FOV Circle
 local fovScreenGui = Instance.new("ScreenGui")
 fovScreenGui.Name = "AimbotFOV"
 fovScreenGui.ResetOnSpawn = false
@@ -681,160 +653,51 @@ fovScreenGui.IgnoreGuiInset = true
 fovScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 fovScreenGui.Parent = game.CoreGui
 
-local function buildfov(name, cfg)
-    local container = Instance.new("Frame")
-    container.Name = name
-    container.BackgroundTransparency = 1
-    container.BorderSizePixel = 0
-    container.Visible = false
-    container.Parent = fovScreenGui
+local fovContainer = Instance.new("Frame")
+fovContainer.BackgroundTransparency = 1
+fovContainer.BorderSizePixel = 0
+fovContainer.Visible = false
+fovContainer.Parent = fovScreenGui
 
-    local fill = Instance.new("Frame")
-    fill.Size = UDim2.new(1, 0, 1, 0)
-    fill.BackgroundColor3 = Color3.new(1, 1, 1)
-    fill.BackgroundTransparency = cfg.FilledTransparency
-    fill.BorderSizePixel = 0
-    fill.Visible = false
-    fill.ZIndex = 1
-    fill.Parent = container
-    Instance.new("UICorner", fill).CornerRadius = UDim.new(1, 0)
+local fovOutline = Instance.new("Frame")
+fovOutline.Size = UDim2.new(1, 0, 1, 0)
+fovOutline.BackgroundTransparency = 1
+fovOutline.BorderSizePixel = 0
+fovOutline.ZIndex = 2
+fovOutline.Parent = fovContainer
+Instance.new("UICorner", fovOutline).CornerRadius = UDim.new(1, 0)
 
-    local fillgrad = Instance.new("UIGradient")
-    fillgrad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, cfg.FilledColor1),
-        ColorSequenceKeypoint.new(1, cfg.FilledColor2)
-    })
-    fillgrad.Rotation = cfg.FilledRotation
-    fillgrad.Parent = fill
+local fovStroke = Instance.new("UIStroke")
+fovStroke.Color = Color3.fromRGB(255, 255, 255)
+fovStroke.Thickness = 1.5
+fovStroke.Transparency = 0
+fovStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+fovStroke.Parent = fovOutline
 
-    local outline = Instance.new("Frame")
-    outline.Size = UDim2.new(1, 0, 1, 0)
-    outline.BackgroundTransparency = 1
-    outline.BorderSizePixel = 0
-    outline.ZIndex = 2
-    outline.Parent = container
-    Instance.new("UICorner", outline).CornerRadius = UDim.new(1, 0)
-
-    local stroke = Instance.new("UIStroke")
-    stroke.Color = Color3.new(1, 1, 1)
-    stroke.Thickness = cfg.OutlineThickness
-    stroke.Transparency = cfg.OutlineTransparency
-    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    stroke.Parent = outline
-
-    local strokegrad = Instance.new("UIGradient")
-    strokegrad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, cfg.OutlineColor1),
-        ColorSequenceKeypoint.new(1, cfg.OutlineColor2)
-    })
-    strokegrad.Rotation = cfg.OutlineRotation
-    strokegrad.Parent = stroke
-
-    return {container = container, fill = fill, fillgrad = fillgrad, stroke = stroke, strokegrad = strokegrad}
-end
-
-local aFOV = buildfov("AimbotFOV", aimbotFOVCfg)
-local aimbotFOVContainer = aFOV.container
-local aimbotFOVFill = aFOV.fill
-local aimbotFOVFillGrad = aFOV.fillgrad
-local aimbotFOVStroke = aFOV.stroke
-local aimbotFOVStrokeGrad = aFOV.strokegrad
-
--- Helpers
-local function worldToScreen(wp, cam)
-    cam = cam or Camera
-    if not cam or not wp then return nil, false end
-    local v, on = cam:WorldToViewportPoint(wp)
+-- Helper functions
+local function worldToScreen(wp)
+    if not Camera or not wp then return nil, false end
+    local v, on = Camera:WorldToViewportPoint(wp)
     if not on or v.Z <= 0 then return v, false end
     return v, true
 end
 
-local function screenCenter(cam)
-    cam = cam or Camera
-    if not cam then return Vector2.zero end
-    local vs = cam.ViewportSize
+local function screenCenter()
+    if not Camera then return Vector2.zero end
+    local vs = Camera.ViewportSize
     return Vector2.new(vs.X * 0.5, vs.Y * 0.5)
-end
-
-local function screenpos2(wp)
-    if not wp then return nil end
-    local sp, ok = worldToScreen(wp, Camera)
-    if not ok then return nil end
-    return Vector2.new(sp.X, sp.Y)
-end
-
-local function findShotMuzzlePosition()
-    local mc = LocalPlayer.Character
-    if not mc then
-        local cam = Workspace.CurrentCamera
-        return cam and (cam.CFrame.Position + cam.CFrame.LookVector * 4) or Vector3.zero
-    end
-    
-    local vm = Workspace:FindFirstChild("ViewModels")
-    if vm then
-        local fp = vm:FindFirstChild("FirstPerson")
-        if fp then
-            for _, m in ipairs(fp:GetChildren()) do
-                if m:IsA("Model") then
-                    local iv = m:FindFirstChild("ItemVisual")
-                    if iv then
-                        local b = iv:FindFirstChild("Body")
-                        if b then
-                            local bp = b:FindFirstChild("BodyPrimary")
-                            if bp then
-                                local mz = bp:FindFirstChild("_muzzle")
-                                if mz and mz:IsA("Attachment") then return mz.WorldPosition end
-                            end
-                        end
-                    end
-                    local mz = m:FindFirstChild("Muzzle") or m:FindFirstChild("MuzzleFlash") or m:FindFirstChild("Barrel") or m:FindFirstChild("GunTip")
-                    if mz then
-                        if mz:IsA("Attachment") then return mz.WorldPosition end
-                        if mz:IsA("BasePart") then return mz.Position end
-                    end
-                    for _, p in ipairs(m:GetChildren()) do
-                        if p:IsA("BasePart") then
-                            local pn = p.Name:lower()
-                            if pn:find("tip") or pn:find("barrel") or pn:find("muzzle") then return p.Position end
-                        end
-                    end
-                    local pp = m.PrimaryPart or m:FindFirstChildWhichIsA("BasePart")
-                    if pp then return pp.Position end
-                end
-            end
-        end
-    end
-    
-    local cam = Workspace.CurrentCamera
-    if cam then return cam.CFrame.Position + cam.CFrame.LookVector * 4 end
-    local root = mc:FindFirstChild("HumanoidRootPart")
-    return root and root.Position or Vector3.zero
-end
-
-local function aimbotfovcenter()
-    if aimbot.followMuzzle then
-        local s = screenpos2(findShotMuzzlePosition())
-        if s then return s end
-    end
-    return screenCenter(Camera)
-end
-
-local function getAimbotScreenPoint()
-    if aimbot.followMuzzle then return aimbotfovcenter() end
-    local loc = UserInputService:GetMouseLocation()
-    return Vector2.new(loc.X, loc.Y)
 end
 
 -- Target validation
 local function isValidTarget(player)
     if not player then return false end
-    if player == LocalPlayer then return false end
+    if player == Player then return false end
     
     if aimbot.teamCheck then
-        local mt = LocalPlayer:GetAttribute("TeamID")
+        local mt = Player:GetAttribute("TeamID")
         local tt = player:GetAttribute("TeamID")
         if mt and tt and mt == tt then return false end
-        if LocalPlayer.Team and player.Team and LocalPlayer.Team == player.Team then return false end
+        if Player.Team and player.Team and Player.Team == player.Team then return false end
     end
     
     if aimbot.aliveCheck then
@@ -849,69 +712,27 @@ local function isValidTarget(player)
         if char and char:FindFirstChildOfClass("ForceField") then return false end
     end
     
-    if aimbot.checkAttachment then
-        local char = player.Character
-        if char then
-            local hrp = char:FindFirstChild("HumanoidRootPart")
-            if hrp then
-                for _, child in ipairs(hrp:GetChildren()) do
-                    if child:IsA("Attachment") then return false end
-                end
-            end
-        end
-    end
-    
     return true
 end
 
--- Wall check
-local function isTargetVisible(player)
-    if not aimbot.wallCheck then return true end
-    if not player or not player.Character then return false end
-    
-    local targetPart = player.Character:FindFirstChild(aimbot.targetPart) or player.Character:FindFirstChild("Head")
-    if not targetPart then return false end
-    
-    local cp = Camera.CFrame.Position
-    local tp = targetPart.Position
-    local dir = (tp - cp).Unit
-    local dist = (tp - cp).Magnitude
-    
-    local rp = RaycastParams.new()
-    rp.FilterDescendantsInstances = {LocalPlayer.Character}
-    rp.FilterType = Enum.RaycastFilterType.Blacklist
-    
-    local rr = Workspace:Raycast(cp, dir * dist, rp)
-    if not rr then return true end
-    
-    local hm = rr.Instance:FindFirstAncestorOfClass("Model")
-    if hm == player.Character then return true end
-    
-    return rr.Instance:IsDescendantOf(player.Character)
-end
-
--- Closest target
-local function closesttocursor()
-    local best, bd = nil, aimbot.fovRadius
-    local mp = getAimbotScreenPoint()
-    if not mp then return nil end
-    
-    local cam = Camera
+-- Find closest target to screen center
+local function findClosestTarget()
+    local best = nil
+    local bestDist = aimbot.fovRadius
+    local center = screenCenter()
     
     for _, p in ipairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer and p.Character and isValidTarget(p) then
-            local part = p.Character:FindFirstChild(aimbot.targetPart)
-            if part and part:IsDescendantOf(Workspace) then
-                local scr, on = worldToScreen(part.Position, cam)
+        if p ~= Player and p.Character and isValidTarget(p) then
+            local part = p.Character:FindFirstChild(aimbot.targetPart) or p.Character:FindFirstChild("Head")
+            if part then
+                local scr, on = worldToScreen(part.Position)
                 if on then
-                    local dx = scr.X - mp.X
-                    local dy = scr.Y - mp.Y
+                    local dx = scr.X - center.X
+                    local dy = scr.Y - center.Y
                     local dist = math.sqrt(dx * dx + dy * dy)
-                    if dist < bd then
-                        if isTargetVisible(p) then
-                            bd = dist
-                            best = part
-                        end
+                    if dist < bestDist then
+                        bestDist = dist
+                        best = part
                     end
                 end
             end
@@ -921,115 +742,41 @@ local function closesttocursor()
     return best
 end
 
--- Lerp alpha
-local function getAimbotLerpAlpha(dt)
-    local s = math.clamp(tonumber(aimbot.smoothness) or 2, 0.1, 10)
-    local curve = aimbot.aimCurve or "Linear"
-    local speed = 6 / s
+-- Main aimbot loop - rotates character toward target
+RunService.RenderStepped:Connect(function()
+    if not aimbot.enabled then return end
     
-    if curve == "Instant" then return 1
-    elseif curve == "Expo" then return 1 - math.exp(-(4 / s) * dt)
-    elseif curve == "EaseIn" then local t = math.clamp(speed * dt, 0, 1); return t * t
-    elseif curve == "EaseOut" then local t = math.clamp(speed * dt, 0, 1); return 1 - (1 - t) * (1 - t)
-    elseif curve == "EaseInOut" then local t = math.clamp(speed * dt, 0, 1); if t < 0.5 then return 2 * t * t end; return 1 - ((-2 * t + 2) ^ 2) / 2
-    elseif curve == "Cubic" then local t = math.clamp(speed * dt, 0, 1); return t * t * t end
+    local char = Player.Character
+    if not char then return end
     
-    return math.clamp(speed * dt, 0, 1)
-end
-
-local function clearAimbotLock()
-    aimbot.lockedTarget = nil
-    aimbot.smoothCF = nil
-end
-
-local function getUnstretchedCameraCFrame(cam)
-    cam = cam or Camera
-    if not cam then return nil end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
     
-    local cf = cam.CFrame
-    local pos = cf.Position
-    local look = cf.LookVector
-    local right = cf.RightVector
-    local up = right:Cross(look).Unit
+    local humanoid = char:FindFirstChildOfClass("Humanoid")
+    if not humanoid or humanoid.Health <= 0 then return end
     
-    return CFrame.fromMatrix(pos, right, up, -look)
-end
-
--- Camera controller
-local camController
-pcall(function()
-    local ctrl = LocalPlayer.PlayerScripts:WaitForChild("Controllers", 10)
-    local cm = ctrl:FindFirstChild("CameraController")
-    if cm and cm:IsA("ModuleScript") then
-        camController = require(cm)
-    end
+    local target = findClosestTarget()
+    if not target then return end
+    
+    -- Calculate smooth rotation
+    local smoothness = aimbot.smoothness or 2
+    local alpha = 1 / smoothness
+    
+    -- Create look CFrame
+    local lookCF = CFrame.lookAt(root.Position, target.Position)
+    local targetCF = CFrame.new(root.Position) * lookCF.Rotation
+    
+    -- Smoothly rotate character
+    root.CFrame = root.CFrame:Lerp(targetCF, alpha)
 end)
-
--- Main loop
-local function stepAimbot(dt)
-    dt = dt or (1 / 240)
-    if not aimbot.enabled then clearAimbotLock(); return end
-    
-    local cam = Workspace.CurrentCamera
-    if not cam then return end
-    Camera = cam
-
-    if not aimbot.lockedTarget then
-        aimbot.lockedTarget = closesttocursor()
-        aimbot.smoothCF = getUnstretchedCameraCFrame(cam)
-        if not aimbot.lockedTarget then return end
-    end
-
-    if not aimbot.lockedTarget.Parent or not aimbot.lockedTarget:IsDescendantOf(Workspace) then
-        clearAimbotLock()
-        return
-    end
-
-    local targetPlayer = Players:GetPlayerFromCharacter(aimbot.lockedTarget.Parent)
-    if targetPlayer then
-        if not isValidTarget(targetPlayer) then clearAimbotLock(); return end
-        if aimbot.wallCheck and not isTargetVisible(targetPlayer) then clearAimbotLock(); return end
-    end
-
-    local myChar = LocalPlayer.Character
-    if not myChar then return end
-    
-    local myHead = myChar:FindFirstChild("Head")
-    if not myHead then clearAimbotLock(); return end
-    
-    if not camController then return end
-    if not aimbot.smoothCF then aimbot.smoothCF = getUnstretchedCameraCFrame(cam) end
-
-    local lookCF = CFrame.lookAt(cam.CFrame.Position, aimbot.lockedTarget.Position)
-    local alpha = getAimbotLerpAlpha(dt)
-    aimbot.smoothCF = aimbot.smoothCF:Lerp(lookCF, alpha)
-
-    if camController and camController.MimicRotation then
-        pcall(function()
-            camController:MimicRotation(aimbot.smoothCF)
-        end)
-    end
-end
-
-RunService:BindToRenderStep("InstanceAimbotUpdate", Enum.RenderPriority.Camera.Value + 1, stepAimbot)
 
 -- FOV render
 RunService.RenderStepped:Connect(function()
-    if aimbotFOVContainer.Visible then
-        local c = aimbotfovcenter()
+    if fovContainer.Visible then
+        local c = screenCenter()
         local r = aimbot.fovRadius
-        aimbotFOVContainer.Size = UDim2.fromOffset(r * 2, r * 2)
-        aimbotFOVContainer.Position = UDim2.fromOffset(c.X - r, c.Y - r)
-        
-        if aimbotFOVCfg.FilledAnimated then
-            aimbotFOVFillGrad.Rotation = math.sin(tick() * aimbotFOVCfg.FilledSpeed) * 180 + aimbotFOVCfg.FilledRotation
-        elseif aimbotFOVCfg.SpinOn then
-            aimbotFOVFillGrad.Rotation = aimbotFOVCfg.FilledRotation + (tick() * aimbotFOVCfg.SpinSpd * 90) % 360
-        end
-        
-        if aimbotFOVCfg.SpinOn then
-            aimbotFOVStrokeGrad.Rotation = aimbotFOVCfg.OutlineRotation + (tick() * aimbotFOVCfg.SpinSpd * 90) % 360
-        end
+        fovContainer.Size = UDim2.fromOffset(r * 2, r * 2)
+        fovContainer.Position = UDim2.fromOffset(c.X - r, c.Y - r)
     end
 end)
 
@@ -1042,7 +789,7 @@ end
 
 local function ToggleAimbotShowFov(enabled)
     aimbot.showFov = enabled
-    aimbotFOVContainer.Visible = enabled
+    fovContainer.Visible = enabled
     SaveData.AimbotShowFov = enabled
     SaveSettings()
 end
@@ -1065,18 +812,6 @@ local function OnAimbotSmoothnessChange(value)
     SaveSettings()
 end
 
-local function OnAimbotAimCurveChange(curve)
-    aimbot.aimCurve = curve
-    SaveData.AimbotAimCurve = curve
-    SaveSettings()
-end
-
-local function ToggleAimbotFollowMuzzle(enabled)
-    aimbot.followMuzzle = enabled
-    SaveData.AimbotFollowMuzzle = enabled
-    SaveSettings()
-end
-
 local function ToggleAimbotTeamCheck(enabled)
     aimbot.teamCheck = enabled
     SaveData.AimbotTeamCheck = enabled
@@ -1089,21 +824,9 @@ local function ToggleAimbotAliveCheck(enabled)
     SaveSettings()
 end
 
-local function ToggleAimbotWallCheck(enabled)
-    aimbot.wallCheck = enabled
-    SaveData.AimbotWallCheck = enabled
-    SaveSettings()
-end
-
 local function ToggleAimbotCheckForceField(enabled)
     aimbot.checkForceField = enabled
     SaveData.AimbotCheckForceField = enabled
-    SaveSettings()
-end
-
-local function ToggleAimbotCheckAttachment(enabled)
-    aimbot.checkAttachment = enabled
-    SaveData.AimbotCheckAttachment = enabled
     SaveSettings()
 end
 
@@ -1115,27 +838,12 @@ CreateToggle("Main", "Show FOV", "AimbotShowFov", ToggleAimbotShowFov)
 CreateDropdown("Main", "Target Part", "AimbotTargetPart", {
     "Head",
     "HumanoidRootPart",
-    "Torso",
-    "UpperTorso",
-    "LowerTorso",
 }, OnAimbotTargetPartChange)
 CreateSlider("Main", "FOV Radius", 50, 1000, "AimbotFovRadius", "", OnAimbotFovRadiusChange)
 CreateSlider("Main", "Smoothness", 1, 10, "AimbotSmoothness", "", OnAimbotSmoothnessChange)
-CreateDropdown("Main", "Aim Curve", "AimbotAimCurve", {
-    "Linear",
-    "Instant",
-    "Expo",
-    "EaseIn",
-    "EaseOut",
-    "EaseInOut",
-    "Cubic",
-}, OnAimbotAimCurveChange)
-CreateToggle("Main", "Follow Muzzle", "AimbotFollowMuzzle", ToggleAimbotFollowMuzzle)
 CreateToggle("Main", "Team Check", "AimbotTeamCheck", ToggleAimbotTeamCheck)
 CreateToggle("Main", "Alive Check", "AimbotAliveCheck", ToggleAimbotAliveCheck)
-CreateToggle("Main", "Wall Check", "AimbotWallCheck", ToggleAimbotWallCheck)
 CreateToggle("Main", "ForceField Check", "AimbotCheckForceField", ToggleAimbotCheckForceField)
-CreateToggle("Main", "Attachment Check", "AimbotCheckAttachment", ToggleAimbotCheckAttachment)
 
 -- Update canvas sizes
 task.wait(0.1)
@@ -1223,22 +931,17 @@ end
 --========================
 -- AUTO-ENABLE SAVED FEATURES
 --========================
--- Load aimbot settings
 aimbot.enabled = SaveData.Aimbot
 aimbot.showFov = SaveData.AimbotShowFov
 aimbot.targetPart = SaveData.AimbotTargetPart
 aimbot.fovRadius = SaveData.AimbotFovRadius
 aimbot.smoothness = SaveData.AimbotSmoothness
-aimbot.aimCurve = SaveData.AimbotAimCurve
-aimbot.followMuzzle = SaveData.AimbotFollowMuzzle
 aimbot.teamCheck = SaveData.AimbotTeamCheck
 aimbot.aliveCheck = SaveData.AimbotAliveCheck
-aimbot.wallCheck = SaveData.AimbotWallCheck
 aimbot.checkForceField = SaveData.AimbotCheckForceField
-aimbot.checkAttachment = SaveData.AimbotCheckAttachment
 
 -- Apply FOV visibility
-aimbotFOVContainer.Visible = aimbot.showFov
+fovContainer.Visible = aimbot.showFov
 
 --========================
 -- SETUP AUTO-EXECUTE
@@ -1248,4 +951,4 @@ SetupAutoExecute()
 -- Open UI on first load
 OpenUIAnimation()
 
-print("[Oishi Hub v1.02] Loaded with Full Instance Aimbot!")
+print("[Oishi Hub v1.02] Loaded with Simple Aimbot!")
