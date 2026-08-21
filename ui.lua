@@ -1,5 +1,5 @@
--- Oishi Hub UI Library Example
--- Rainbow Circular Color Wheel + Toggle + Lock
+-- Oishi Hub UI Library
+-- Smooth Circular Rainbow Color Wheel + Toggle + Lock
 -- Full Version
 
 local Players = game:GetService("Players")
@@ -86,13 +86,21 @@ local uiHeight = isPC
 --==================================================
 
 local Main = Instance.new("Frame")
-Main.Size = UDim2.new(0, uiWidth, 0, uiHeight)
+
+Main.Size = UDim2.new(
+    0,
+    uiWidth,
+    0,
+    uiHeight
+)
+
 Main.Position = UDim2.new(
     0.5,
     -uiWidth / 2,
     0.5,
     -uiHeight / 2
 )
+
 Main.BackgroundColor3 = CONFIG.Background
 Main.BorderSizePixel = 0
 Main.Active = true
@@ -101,6 +109,7 @@ Main.ZIndex = 10
 Main.Parent = ScreenGui
 
 local MainStroke = Instance.new("UIStroke")
+
 MainStroke.Color = CONFIG.Border
 MainStroke.Thickness = 2
 MainStroke.Transparency = 0
@@ -111,6 +120,7 @@ MainStroke.Parent = Main
 --==================================================
 
 local Header = Instance.new("Frame")
+
 Header.Size = UDim2.new(1, 0, 0, 30)
 Header.BackgroundColor3 = CONFIG.Surface
 Header.BorderSizePixel = 0
@@ -118,6 +128,7 @@ Header.ZIndex = 11
 Header.Parent = Main
 
 local HeaderTitle = Instance.new("TextLabel")
+
 HeaderTitle.Size = UDim2.new(0, 300, 0, 20)
 HeaderTitle.Position = UDim2.new(0, 10, 0, 5)
 HeaderTitle.BackgroundTransparency = 1
@@ -130,6 +141,7 @@ HeaderTitle.ZIndex = 12
 HeaderTitle.Parent = Header
 
 local CloseBtn = Instance.new("TextButton")
+
 CloseBtn.Size = UDim2.new(0, 20, 0, 20)
 CloseBtn.Position = UDim2.new(1, -25, 0, 5)
 CloseBtn.BackgroundColor3 = CONFIG.SurfaceLight
@@ -143,11 +155,13 @@ CloseBtn.AutoButtonColor = false
 CloseBtn.Parent = Header
 
 CloseBtn.MouseButton1Click:Connect(function()
+
     if isPC then
         ScreenGui:Destroy()
     else
         Main.Visible = false
     end
+
 end)
 
 --==================================================
@@ -155,6 +169,7 @@ end)
 --==================================================
 
 local LeftSide = Instance.new("Frame")
+
 LeftSide.Size = UDim2.new(0.5, -1, 1, -30)
 LeftSide.Position = UDim2.new(0, 0, 0, 30)
 LeftSide.BackgroundColor3 = CONFIG.Background
@@ -163,6 +178,7 @@ LeftSide.ZIndex = 11
 LeftSide.Parent = Main
 
 local RightSide = Instance.new("Frame")
+
 RightSide.Size = UDim2.new(0.5, -1, 1, -30)
 RightSide.Position = UDim2.new(0.5, 1, 0, 30)
 RightSide.BackgroundColor3 = CONFIG.Surface
@@ -175,6 +191,7 @@ RightSide.Parent = Main
 --==================================================
 
 local TabFrame = Instance.new("Frame")
+
 TabFrame.Size = UDim2.new(1, 0, 0, 26)
 TabFrame.BackgroundColor3 = CONFIG.Surface
 TabFrame.BorderSizePixel = 0
@@ -193,6 +210,7 @@ local TabButtons = {}
 local TabContents = {}
 
 local ContentContainer = Instance.new("Frame")
+
 ContentContainer.Size = UDim2.new(1, 0, 1, -26)
 ContentContainer.Position = UDim2.new(0, 0, 0, 26)
 ContentContainer.BackgroundTransparency = 1
@@ -268,6 +286,7 @@ for i, tab in ipairs(Tabs) do
     scrollFrame.Parent = content
 
     local layout = Instance.new("UIListLayout")
+
     layout.Padding = UDim.new(0, 6)
     layout.SortOrder = Enum.SortOrder.LayoutOrder
     layout.Parent = scrollFrame
@@ -294,6 +313,7 @@ for i, tab in ipairs(Tabs) do
         end
 
         local oldTab = currentTab
+
         currentTab = tab.name
 
         for name, b in pairs(TabButtons) do
@@ -330,9 +350,12 @@ for i, tab in ipairs(Tabs) do
         local newContent = TabContents[tab.name]
 
         if oldContent and newContent then
+
             oldContent.frame.Visible = false
             newContent.frame.Visible = true
+
         end
+
     end)
 end
 
@@ -367,7 +390,12 @@ end
 -- TOGGLE
 --==================================================
 
-local function CreateToggle(tabName, name, default, callback)
+local function CreateToggle(
+    tabName,
+    name,
+    default,
+    callback
+)
 
     local content = TabContents[tabName]
 
@@ -400,8 +428,12 @@ local function CreateToggle(tabName, name, default, callback)
 
     toggleBtn.Size = UDim2.new(0, 32, 0, 18)
     toggleBtn.Position = UDim2.new(1, -40, 0, 8)
+
     toggleBtn.BackgroundColor3 =
-        default and CONFIG.ToggleOn or CONFIG.ToggleOff
+        default
+        and CONFIG.ToggleOn
+        or CONFIG.ToggleOff
+
     toggleBtn.BorderSizePixel = 0
     toggleBtn.Text = ""
     toggleBtn.AutoButtonColor = false
@@ -409,6 +441,7 @@ local function CreateToggle(tabName, name, default, callback)
     toggleBtn.Parent = container
 
     local toggleCorner = Instance.new("UICorner")
+
     toggleCorner.CornerRadius = UDim.new(1, 0)
     toggleCorner.Parent = toggleBtn
 
@@ -427,6 +460,7 @@ local function CreateToggle(tabName, name, default, callback)
     knob.Parent = toggleBtn
 
     local knobCorner = Instance.new("UICorner")
+
     knobCorner.CornerRadius = UDim.new(1, 0)
     knobCorner.Parent = knob
 
@@ -477,6 +511,7 @@ local function CreateToggle(tabName, name, default, callback)
         if callback then
             callback(state)
         end
+
     end)
 
     return container
@@ -486,7 +521,11 @@ end
 -- BUTTON
 --==================================================
 
-local function CreateButton(tabName, name, callback)
+local function CreateButton(
+    tabName,
+    name,
+    callback
+)
 
     local content = TabContents[tabName]
 
@@ -605,6 +644,7 @@ local function CreateSlider(
     sliderBg.Parent = container
 
     local sliderCorner = Instance.new("UICorner")
+
     sliderCorner.CornerRadius = UDim.new(1, 0)
     sliderCorner.Parent = sliderBg
 
@@ -627,6 +667,7 @@ local function CreateSlider(
     sliderFill.Parent = sliderBg
 
     local fillCorner = Instance.new("UICorner")
+
     fillCorner.CornerRadius = UDim.new(1, 0)
     fillCorner.Parent = sliderFill
 
@@ -653,16 +694,18 @@ local function CreateSlider(
 
         valueLabel.Text = tostring(value)
 
-        sliderFill.Size = UDim2.new(
-            relativeX,
-            0,
-            1,
-            0
-        )
+        sliderFill.Size =
+            UDim2.new(
+                relativeX,
+                0,
+                1,
+                0
+            )
 
         if callback then
             callback(value)
         end
+
     end
 
     sliderBg.InputBegan:Connect(function(input)
@@ -678,44 +721,51 @@ local function CreateSlider(
             local moveConn
             local endConn
 
-            moveConn = UIS.InputChanged:Connect(function(moveInput)
+            moveConn =
+                UIS.InputChanged:Connect(function(moveInput)
 
-                if moveInput.UserInputType ==
-                    Enum.UserInputType.MouseMovement
-                    or
-                    moveInput.UserInputType ==
-                    Enum.UserInputType.Touch then
+                    if moveInput.UserInputType ==
+                        Enum.UserInputType.MouseMovement
+                        or
+                        moveInput.UserInputType ==
+                        Enum.UserInputType.Touch then
 
-                    updateSlider(moveInput)
+                        updateSlider(moveInput)
 
-                end
-            end)
-
-            endConn = UIS.InputEnded:Connect(function(endInput)
-
-                if endInput.UserInputType ==
-                    Enum.UserInputType.MouseButton1
-                    or
-                    endInput.UserInputType ==
-                    Enum.UserInputType.Touch then
-
-                    if moveConn then
-                        moveConn:Disconnect()
                     end
 
-                    if endConn then
-                        endConn:Disconnect()
+                end)
+
+            endConn =
+                UIS.InputEnded:Connect(function(endInput)
+
+                    if endInput.UserInputType ==
+                        Enum.UserInputType.MouseButton1
+                        or
+                        endInput.UserInputType ==
+                        Enum.UserInputType.Touch then
+
+                        if moveConn then
+                            moveConn:Disconnect()
+                        end
+
+                        if endConn then
+                            endConn:Disconnect()
+                        end
+
                     end
-                end
-            end)
+
+                end)
+
         end
+
     end)
 
     return container
 end
 
 --==================================================
--- RAINBOW CIRCULAR COLOR PICKER
+-- SMOOTH CIRCULAR COLOR PICKER
 --==================================================
 
 local function CreateRainbowColorPicker(
@@ -730,9 +780,9 @@ local function CreateRainbowColorPicker(
         return
     end
 
-    --==============================================
+    --================================================
     -- MAIN ROW
-    --==============================================
+    --================================================
 
     local container = Instance.new("Frame")
 
@@ -755,10 +805,14 @@ local function CreateRainbowColorPicker(
     nameLabel.ZIndex = 13
     nameLabel.Parent = container
 
+    --================================================
+    -- COLOR PREVIEW
+    --================================================
+
     local previewBtn = Instance.new("TextButton")
 
-    previewBtn.Size = UDim2.new(0, 30, 0, 20)
-    previewBtn.Position = UDim2.new(1, -38, 0, 7)
+    previewBtn.Size = UDim2.new(0, 24, 0, 24)
+    previewBtn.Position = UDim2.new(1, -32, 0, 5)
     previewBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
     previewBtn.BorderSizePixel = 0
     previewBtn.Text = ""
@@ -767,21 +821,27 @@ local function CreateRainbowColorPicker(
     previewBtn.Parent = container
 
     local previewCorner = Instance.new("UICorner")
-    previewCorner.CornerRadius = UDim.new(0, 4)
+
+    previewCorner.CornerRadius = UDim.new(1, 0)
     previewCorner.Parent = previewBtn
+
+    local previewStroke = Instance.new("UIStroke")
+
+    previewStroke.Color = Color3.fromRGB(80, 80, 85)
+    previewStroke.Thickness = 1
+    previewStroke.Parent = previewBtn
 
     local currentColor =
         Color3.fromRGB(255, 0, 0)
 
     local activePopup = nil
 
-    --==============================================
+    --================================================
     -- OPEN PICKER
-    --==============================================
+    --================================================
 
     previewBtn.MouseButton1Click:Connect(function()
 
-        -- Close picker if already open
         if activePopup then
 
             activePopup:Destroy()
@@ -790,9 +850,9 @@ local function CreateRainbowColorPicker(
             return
         end
 
-        --==========================================
+        --================================================
         -- POPUP
-        --==========================================
+        --================================================
 
         local PickerPopup = Instance.new("Frame")
 
@@ -858,21 +918,21 @@ local function CreateRainbowColorPicker(
         PickerPopup.ZIndex = 999
         PickerPopup.Parent = ScreenGui
 
-        --==========================================
+        --================================================
         -- POPUP CORNER
-        --==========================================
+        --================================================
 
         local popupCorner = Instance.new("UICorner")
 
         popupCorner.CornerRadius =
-            UDim.new(0, 8)
+            UDim.new(0, 10)
 
         popupCorner.Parent =
             PickerPopup
 
-        --==========================================
+        --================================================
         -- POPUP BORDER
-        --==========================================
+        --================================================
 
         local popupStroke = Instance.new("UIStroke")
 
@@ -881,13 +941,11 @@ local function CreateRainbowColorPicker(
 
         popupStroke.Thickness = 1
         popupStroke.Transparency = 0.15
+        popupStroke.Parent = PickerPopup
 
-        popupStroke.Parent =
-            PickerPopup
-
-        --==========================================
+        --================================================
         -- TITLE
-        --==========================================
+        --================================================
 
         local title = Instance.new("TextLabel")
 
@@ -918,9 +976,9 @@ local function CreateRainbowColorPicker(
         title.ZIndex = 1001
         title.Parent = PickerPopup
 
-        --==========================================
+        --================================================
         -- CLOSE BUTTON
-        --==========================================
+        --================================================
 
         local closeBtn = Instance.new("TextButton")
 
@@ -962,7 +1020,7 @@ local function CreateRainbowColorPicker(
             Instance.new("UICorner")
 
         closeCorner.CornerRadius =
-            UDim.new(0, 4)
+            UDim.new(1, 0)
 
         closeCorner.Parent =
             closeBtn
@@ -974,14 +1032,14 @@ local function CreateRainbowColorPicker(
 
         end)
 
-        --==========================================
-        -- COLOR WHEEL
-        --==========================================
+        --================================================
+        -- SMOOTH RAINBOW WHEEL
+        --================================================
 
         local wheelSize = 160
 
         local colorWheel =
-            Instance.new("Frame")
+            Instance.new("ImageButton")
 
         colorWheel.Size =
             UDim2.new(
@@ -1006,11 +1064,22 @@ local function CreateRainbowColorPicker(
                 1
             )
 
+        colorWheel.BackgroundTransparency = 1
         colorWheel.BorderSizePixel = 0
-        colorWheel.ClipsDescendants = true
+        colorWheel.AutoButtonColor = false
         colorWheel.ZIndex = 1000
         colorWheel.Parent = PickerPopup
 
+        -- Circular HSV wheel texture.
+        -- If your executor/game blocks this asset,
+        -- replace it with your own uploaded rainbow wheel.
+        colorWheel.Image =
+            "rbxassetid://6020299385"
+
+        colorWheel.ScaleType =
+            Enum.ScaleType.Fit
+
+        -- Make the actual GUI perfectly circular.
         local wheelCorner =
             Instance.new("UICorner")
 
@@ -1020,103 +1089,9 @@ local function CreateRainbowColorPicker(
         wheelCorner.Parent =
             colorWheel
 
-        --==========================================
-        -- TRUE HSV RAINBOW WHEEL
-        --==========================================
-
-        local segments = 72
-        local rings = 32
-
-        local wheelCenter =
-            wheelSize / 2
-
-        local maxRadius =
-            wheelSize / 2
-
-        for ring = 1, rings do
-
-            local saturation =
-                ring / rings
-
-            local radius =
-                maxRadius *
-                saturation
-
-            local circumference =
-                2 *
-                math.pi *
-                math.max(
-                    radius,
-                    1
-                )
-
-            local segmentWidth =
-                circumference /
-                segments
-
-            for segment = 1, segments do
-
-                local hue =
-                    (segment - 1) /
-                    segments
-
-                local angle =
-                    hue *
-                    math.pi *
-                    2
-
-                local x =
-                    wheelCenter +
-                    math.cos(angle) *
-                    radius
-
-                local y =
-                    wheelCenter +
-                    math.sin(angle) *
-                    radius
-
-                local size =
-                    math.max(
-                        3,
-                        segmentWidth + 2
-                    )
-
-                local piece =
-                    Instance.new("Frame")
-
-                piece.Size =
-                    UDim2.new(
-                        0,
-                        size,
-                        0,
-                        size
-                    )
-
-                piece.Position =
-                    UDim2.new(
-                        0,
-                        x - size / 2,
-                        0,
-                        y - size / 2
-                    )
-
-                piece.BackgroundColor3 =
-                    Color3.fromHSV(
-                        hue,
-                        saturation,
-                        1
-                    )
-
-                piece.BorderSizePixel = 0
-                piece.ZIndex = 1000
-                piece.Parent = colorWheel
-
-            end
-        end
-
-        --==========================================
+        --================================================
         -- WHITE CENTER
-        --==========================================
+        --================================================
 
         local centerSize = 38
 
@@ -1159,9 +1134,9 @@ local function CreateRainbowColorPicker(
         centerCorner.Parent =
             center
 
-        --==========================================
+        --================================================
         -- CURSOR
-        --==========================================
+        --================================================
 
         local cursor =
             Instance.new("Frame")
@@ -1215,9 +1190,9 @@ local function CreateRainbowColorPicker(
         cursorStroke.Thickness = 2
         cursorStroke.Parent = cursor
 
-        --==========================================
+        --================================================
         -- RGB LABEL
-        --==========================================
+        --================================================
 
         local rgbLabel =
             Instance.new("TextLabel")
@@ -1257,33 +1232,24 @@ local function CreateRainbowColorPicker(
         rgbLabel.ZIndex = 1001
         rgbLabel.Parent = PickerPopup
 
-        --==========================================
+        --================================================
         -- PRESET COLORS
-        --==========================================
+        --================================================
 
         local presets = {
 
             Color3.fromRGB(255, 0, 0),
-
             Color3.fromRGB(255, 128, 0),
-
             Color3.fromRGB(255, 255, 0),
-
             Color3.fromRGB(0, 255, 0),
-
             Color3.fromRGB(0, 255, 255),
-
             Color3.fromRGB(0, 128, 255),
-
             Color3.fromRGB(0, 0, 255),
-
             Color3.fromRGB(128, 0, 255),
-
             Color3.fromRGB(255, 0, 255),
-
             Color3.fromRGB(255, 255, 255),
-
             Color3.fromRGB(0, 0, 0),
+
         }
 
         for i, preset in ipairs(presets) do
@@ -1339,7 +1305,6 @@ local function CreateRainbowColorPicker(
                 )
 
             presetStroke.Thickness = 1
-
             presetStroke.Parent =
                 presetBtn
 
@@ -1371,7 +1336,7 @@ local function CreateRainbowColorPicker(
                     preset:ToHSV()
 
                 local radius =
-                    maxRadius * s
+                    (wheelSize / 2) * s
 
                 local angle =
                     h *
@@ -1379,12 +1344,12 @@ local function CreateRainbowColorPicker(
                     2
 
                 local cursorX =
-                    wheelCenter +
+                    wheelSize / 2 +
                     math.cos(angle) *
                     radius
 
                 local cursorY =
-                    wheelCenter +
+                    wheelSize / 2 +
                     math.sin(angle) *
                     radius
 
@@ -1401,11 +1366,12 @@ local function CreateRainbowColorPicker(
                 end
 
             end)
+
         end
 
-        --==========================================
+        --================================================
         -- PICK COLOR
-        --==========================================
+        --================================================
 
         local draggingWheel = false
 
@@ -1442,7 +1408,7 @@ local function CreateRainbowColorPicker(
             local radius =
                 wheelAbsoluteSize.X / 2
 
-            -- Clamp to circle
+            -- Keep selection inside the circle.
             if distance > radius then
 
                 local scale =
@@ -1459,9 +1425,10 @@ local function CreateRainbowColorPicker(
 
                 distance =
                     radius
+
             end
 
-            -- Hue from angle
+            -- Hue
             local angle =
                 math.atan2(
                     dy,
@@ -1476,7 +1443,7 @@ local function CreateRainbowColorPicker(
                 hue = hue + 1
             end
 
-            -- Saturation from center
+            -- Saturation
             local saturation =
                 math.clamp(
                     distance /
@@ -1485,7 +1452,7 @@ local function CreateRainbowColorPicker(
                     1
                 )
 
-            -- Full brightness
+            -- Brightness
             local value = 1
 
             local pickedColor =
@@ -1506,18 +1473,15 @@ local function CreateRainbowColorPicker(
                     "RGB: %d, %d, %d",
 
                     math.floor(
-                        pickedColor.R *
-                        255
+                        pickedColor.R * 255
                     ),
 
                     math.floor(
-                        pickedColor.G *
-                        255
+                        pickedColor.G * 255
                     ),
 
                     math.floor(
-                        pickedColor.B *
-                        255
+                        pickedColor.B * 255
                     )
                 )
 
@@ -1543,11 +1507,12 @@ local function CreateRainbowColorPicker(
                     pickedColor
                 )
             end
+
         end
 
-        --==========================================
+        --================================================
         -- WHEEL INPUT
-        --==========================================
+        --================================================
 
         colorWheel.InputBegan:Connect(function(input)
 
@@ -1560,7 +1525,9 @@ local function CreateRainbowColorPicker(
                 draggingWheel = true
 
                 pickColor(input)
+
             end
+
         end)
 
         local moveConnection
@@ -1579,7 +1546,9 @@ local function CreateRainbowColorPicker(
                     Enum.UserInputType.Touch then
 
                     pickColor(input)
+
                 end
+
             end)
 
         local endConnection
@@ -1594,12 +1563,14 @@ local function CreateRainbowColorPicker(
                     Enum.UserInputType.Touch then
 
                     draggingWheel = false
+
                 end
+
             end)
 
-        --==========================================
+        --================================================
         -- CLEANUP
-        --==========================================
+        --================================================
 
         PickerPopup.Destroying:Connect(function()
 
@@ -1617,7 +1588,9 @@ local function CreateRainbowColorPicker(
                 PickerPopup then
 
                 activePopup = nil
+
             end
+
         end)
 
     end)
@@ -1639,10 +1612,12 @@ CreateToggle(
     "Toggle Test 1",
     false,
     function(state)
+
         print(
             "Toggle 1:",
             state
         )
+
     end
 )
 
@@ -1651,10 +1626,12 @@ CreateToggle(
     "Toggle Test 2",
     true,
     function(state)
+
         print(
             "Toggle 2:",
             state
         )
+
     end
 )
 
@@ -1667,9 +1644,11 @@ CreateButton(
     "Tab 1",
     "Button Test 1",
     function()
+
         print(
             "Button clicked!"
         )
+
     end
 )
 
@@ -1685,10 +1664,12 @@ CreateSlider(
     100,
     50,
     function(value)
+
         print(
             "Slider:",
             value
         )
+
     end
 )
 
@@ -1764,7 +1745,9 @@ Main.InputBegan:Connect(function(input)
 
         startPos =
             Main.Position
+
     end
+
 end)
 
 UIS.InputChanged:Connect(function(input)
@@ -1792,7 +1775,9 @@ UIS.InputChanged:Connect(function(input)
                 startPos.Y.Offset +
                     delta.Y
             )
+
     end
+
 end)
 
 UIS.InputEnded:Connect(function(input)
@@ -1804,7 +1789,9 @@ UIS.InputEnded:Connect(function(input)
         Enum.UserInputType.Touch then
 
         dragging = false
+
     end
+
 end)
 
 --==================================================
@@ -1815,9 +1802,9 @@ if isMobile then
 
     local isUnlocked = false
 
-    --==============================================
+    --================================================
     -- TOGGLE BUTTON
-    --==============================================
+    --================================================
 
     local ToggleBtn =
         Instance.new("TextButton")
@@ -1872,9 +1859,9 @@ if isMobile then
 
     end)
 
-    --==============================================
+    --================================================
     -- LOCK BUTTON
-    --==============================================
+    --================================================
 
     local LockBtn =
         Instance.new("TextButton")
@@ -1939,9 +1926,9 @@ if isMobile then
 
     end)
 
-    --==============================================
+    --================================================
     -- MOBILE DRAG
-    --==============================================
+    --================================================
 
     local function makeDraggable(btn)
 
@@ -1969,7 +1956,9 @@ if isMobile then
 
                 btnStartPos =
                     btn.Position
+
             end
+
         end)
 
         UIS.InputChanged:Connect(function(input)
@@ -2004,8 +1993,11 @@ if isMobile then
                             btnStartPos.Y.Offset +
                                 delta.Y
                         )
+
                 end
+
             end
+
         end)
 
         UIS.InputEnded:Connect(function(input)
@@ -2017,8 +2009,11 @@ if isMobile then
                 Enum.UserInputType.Touch then
 
                 btnDragging = false
+
             end
+
         end)
+
     end
 
     makeDraggable(
@@ -2028,6 +2023,7 @@ if isMobile then
     makeDraggable(
         LockBtn
     )
+
 end
 
 --==================================================
@@ -2050,8 +2046,11 @@ if isPC then
 
             Main.Visible =
                 not Main.Visible
+
         end
+
     end)
+
 end
 
 --==================================================
@@ -2059,5 +2058,5 @@ end
 --==================================================
 
 print(
-    "[Oishi Hub UI Library] Loaded with TRUE Rainbow Color Wheel!"
+    "[Oishi Hub UI Library] Loaded with SMOOTH CIRCULAR COLOR WHEEL!"
 )
