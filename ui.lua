@@ -1,4 +1,4 @@
--- Oishi Hub UI Library Example
+-- Oishi Hub UI Library Example - Two Sided with Color Picker
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
@@ -47,7 +47,7 @@ ScreenGui.IgnoreGuiInset = true
 ScreenGui.DisplayOrder = 999999
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
-local uiWidth = isPC and 450 or math.min(550, Camera.ViewportSize.X - 20)
+local uiWidth = isPC and 600 or math.min(650, Camera.ViewportSize.X - 20)
 local uiHeight = isPC and 450 or math.min(400, Camera.ViewportSize.Y * 0.5)
 
 -- Main Frame
@@ -75,7 +75,7 @@ Header.ZIndex = 11
 Header.Parent = Main
 
 local HeaderTitle = Instance.new("TextLabel")
-HeaderTitle.Size = UDim2.new(0, 200, 0, 20)
+HeaderTitle.Size = UDim2.new(0, 300, 0, 20)
 HeaderTitle.Position = UDim2.new(0, 10, 0, 5)
 HeaderTitle.BackgroundTransparency = 1
 HeaderTitle.Text = "OISHI HUB UI LIBRARY"
@@ -109,14 +109,41 @@ CloseBtn.MouseButton1Click:Connect(function()
     ScreenGui:Destroy()
 end)
 
--- Tab Frame
+--========================
+-- TWO SIDED LAYOUT
+--========================
+
+-- Left Side (Tabs + Content)
+local LeftSide = Instance.new("Frame")
+LeftSide.Size = UDim2.new(0.5, -1, 1, -30)
+LeftSide.Position = UDim2.new(0, 0, 0, 30)
+LeftSide.BackgroundColor3 = CONFIG.Background
+LeftSide.BorderSizePixel = 0
+LeftSide.ZIndex = 11
+LeftSide.Parent = Main
+
+-- Right Side (Color Picker + Info)
+local RightSide = Instance.new("Frame")
+RightSide.Size = UDim2.new(0.5, -1, 1, -30)
+RightSide.Position = UDim2.new(0.5, 1, 0, 30)
+RightSide.BackgroundColor3 = CONFIG.Surface
+RightSide.BorderSizePixel = 0
+RightSide.ZIndex = 11
+RightSide.Parent = Main
+
+local RightSideStroke = Instance.new("UIStroke")
+RightSideStroke.Color = CONFIG.Border
+RightSideStroke.Thickness = 1
+RightSideStroke.Transparency = 0.5
+RightSideStroke.Parent = RightSide
+
+-- Tab Frame (Left Side)
 local TabFrame = Instance.new("Frame")
 TabFrame.Size = UDim2.new(1, 0, 0, 26)
-TabFrame.Position = UDim2.new(0, 0, 0, 30)
 TabFrame.BackgroundColor3 = CONFIG.Surface
 TabFrame.BorderSizePixel = 0
 TabFrame.ZIndex = 11
-TabFrame.Parent = Main
+TabFrame.Parent = LeftSide
 
 -- Tabs
 local Tabs = {
@@ -129,15 +156,15 @@ local currentTab = "Tab 1"
 local TabButtons = {}
 local TabContents = {}
 
--- Content Container
+-- Content Container (Left Side)
 local ContentContainer = Instance.new("Frame")
-ContentContainer.Size = UDim2.new(1, 0, 1, -56)
-ContentContainer.Position = UDim2.new(0, 0, 0, 56)
+ContentContainer.Size = UDim2.new(1, 0, 1, -26)
+ContentContainer.Position = UDim2.new(0, 0, 0, 26)
 ContentContainer.BackgroundTransparency = 1
 ContentContainer.BorderSizePixel = 0
 ContentContainer.ClipsDescendants = true
 ContentContainer.ZIndex = 11
-ContentContainer.Parent = Main
+ContentContainer.Parent = LeftSide
 
 -- Create Tabs
 for i, tab in ipairs(Tabs) do
@@ -157,7 +184,6 @@ for i, tab in ipairs(Tabs) do
     
     TabButtons[tab.name] = btn
     
-    -- Content Frame
     local content = Instance.new("Frame")
     content.Size = UDim2.new(1, 0, 1, 0)
     content.Position = UDim2.new(0, 0, 0, 0)
@@ -167,7 +193,6 @@ for i, tab in ipairs(Tabs) do
     content.ZIndex = 11
     content.Parent = ContentContainer
     
-    -- Scrolling Frame
     local scrollFrame = Instance.new("ScrollingFrame")
     scrollFrame.Size = UDim2.new(1, 0, 1, 0)
     scrollFrame.BackgroundTransparency = 1
@@ -179,7 +204,6 @@ for i, tab in ipairs(Tabs) do
     scrollFrame.ZIndex = 12
     scrollFrame.Parent = content
     
-    -- Layout
     local layout = Instance.new("UIListLayout")
     layout.Padding = UDim.new(0, 6)
     layout.SortOrder = Enum.SortOrder.LayoutOrder
@@ -198,13 +222,11 @@ for i, tab in ipairs(Tabs) do
         layout = layout
     }
     
-    -- Tab Button Click
     btn.MouseButton1Click:Connect(function()
         if currentTab == tab.name then return end
         local oldTab = currentTab
         currentTab = tab.name
         
-        -- Update tab buttons
         for name, b in pairs(TabButtons) do
             if name == tab.name then
                 TweenService:Create(b, TweenInfo.new(0.2), {
@@ -221,7 +243,6 @@ for i, tab in ipairs(Tabs) do
             end
         end
         
-        -- Switch content
         local oldContent = TabContents[oldTab]
         local newContent = TabContents[tab.name]
         
@@ -236,7 +257,6 @@ end
 -- UI COMPONENT FUNCTIONS
 --========================
 
--- Section Label
 local function CreateSectionLabel(tabName, text)
     local content = TabContents[tabName]
     if not content then return end
@@ -246,7 +266,7 @@ local function CreateSectionLabel(tabName, text)
     label.BackgroundTransparency = 1
     label.Text = text
     label.Font = CONFIG.Font
-    label.TextSize = 10
+    label.TextSize = 9
     label.TextColor3 = CONFIG.Accent
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.ZIndex = 13
@@ -255,13 +275,12 @@ local function CreateSectionLabel(tabName, text)
     return label
 end
 
--- Toggle Button
 local function CreateToggle(tabName, name, default, callback)
     local content = TabContents[tabName]
     if not content then return end
     
     local container = Instance.new("Frame")
-    container.Size = UDim2.new(1, 0, 0, 36)
+    container.Size = UDim2.new(1, 0, 0, 34)
     container.BackgroundColor3 = CONFIG.Surface
     container.BorderSizePixel = 0
     container.ZIndex = 12
@@ -274,20 +293,20 @@ local function CreateToggle(tabName, name, default, callback)
     containerStroke.Parent = container
     
     local nameLabel = Instance.new("TextLabel")
-    nameLabel.Size = UDim2.new(0.7, 0, 0, 16)
-    nameLabel.Position = UDim2.new(0, 10, 0, 10)
+    nameLabel.Size = UDim2.new(0.65, 0, 0, 14)
+    nameLabel.Position = UDim2.new(0, 8, 0, 10)
     nameLabel.BackgroundTransparency = 1
     nameLabel.Text = name
     nameLabel.Font = CONFIG.FontMedium
-    nameLabel.TextSize = 10
+    nameLabel.TextSize = 9
     nameLabel.TextColor3 = CONFIG.Text
     nameLabel.TextXAlignment = Enum.TextXAlignment.Left
     nameLabel.ZIndex = 13
     nameLabel.Parent = container
     
     local toggleBtn = Instance.new("TextButton")
-    toggleBtn.Size = UDim2.new(0, 36, 0, 20)
-    toggleBtn.Position = UDim2.new(1, -46, 0, 8)
+    toggleBtn.Size = UDim2.new(0, 32, 0, 18)
+    toggleBtn.Position = UDim2.new(1, -40, 0, 8)
     toggleBtn.BackgroundColor3 = default and CONFIG.ToggleOn or CONFIG.ToggleOff
     toggleBtn.BorderSizePixel = 0
     toggleBtn.Text = ""
@@ -302,8 +321,8 @@ local function CreateToggle(tabName, name, default, callback)
     toggleStroke.Parent = toggleBtn
     
     local knob = Instance.new("Frame")
-    knob.Size = UDim2.new(0, 14, 0, 14)
-    knob.Position = default and UDim2.new(0, 19, 0, 3) or UDim2.new(0, 3, 0, 3)
+    knob.Size = UDim2.new(0, 12, 0, 12)
+    knob.Position = default and UDim2.new(0, 17, 0, 3) or UDim2.new(0, 3, 0, 3)
     knob.BackgroundColor3 = Color3.new(1, 1, 1)
     knob.BorderSizePixel = 0
     knob.ZIndex = 14
@@ -320,7 +339,7 @@ local function CreateToggle(tabName, name, default, callback)
         
         if state then
             TweenService:Create(toggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = CONFIG.ToggleOn}):Play()
-            TweenService:Create(knob, TweenInfo.new(0.2), {Position = UDim2.new(0, 19, 0, 3)}):Play()
+            TweenService:Create(knob, TweenInfo.new(0.2), {Position = UDim2.new(0, 17, 0, 3)}):Play()
         else
             TweenService:Create(toggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = CONFIG.ToggleOff}):Play()
             TweenService:Create(knob, TweenInfo.new(0.2), {Position = UDim2.new(0, 3, 0, 3)}):Play()
@@ -332,18 +351,17 @@ local function CreateToggle(tabName, name, default, callback)
     return container
 end
 
--- Button
 local function CreateButton(tabName, name, callback)
     local content = TabContents[tabName]
     if not content then return end
     
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, 0, 0, 36)
+    btn.Size = UDim2.new(1, 0, 0, 34)
     btn.BackgroundColor3 = CONFIG.Surface
     btn.BorderSizePixel = 0
     btn.Text = name
     btn.Font = CONFIG.Font
-    btn.TextSize = 10
+    btn.TextSize = 9
     btn.TextColor3 = CONFIG.Text
     btn.ZIndex = 12
     btn.AutoButtonColor = false
@@ -363,14 +381,6 @@ local function CreateButton(tabName, name, callback)
         TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = CONFIG.Surface}):Play()
     end)
     
-    btn.MouseButton1Down:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.05), {BackgroundColor3 = CONFIG.ClickSurface}):Play()
-    end)
-    
-    btn.MouseButton1Up:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.1), {BackgroundColor3 = CONFIG.HoverSurface}):Play()
-    end)
-    
     btn.MouseButton1Click:Connect(function()
         if callback then callback() end
     end)
@@ -378,13 +388,12 @@ local function CreateButton(tabName, name, callback)
     return btn
 end
 
--- Slider
 local function CreateSlider(tabName, name, min, max, default, callback)
     local content = TabContents[tabName]
     if not content then return end
     
     local container = Instance.new("Frame")
-    container.Size = UDim2.new(1, 0, 0, 44)
+    container.Size = UDim2.new(1, 0, 0, 40)
     container.BackgroundColor3 = CONFIG.Surface
     container.BorderSizePixel = 0
     container.ZIndex = 12
@@ -397,32 +406,32 @@ local function CreateSlider(tabName, name, min, max, default, callback)
     containerStroke.Parent = container
     
     local nameLabel = Instance.new("TextLabel")
-    nameLabel.Size = UDim2.new(0.6, 0, 0, 16)
-    nameLabel.Position = UDim2.new(0, 10, 0, 6)
+    nameLabel.Size = UDim2.new(0.55, 0, 0, 14)
+    nameLabel.Position = UDim2.new(0, 8, 0, 5)
     nameLabel.BackgroundTransparency = 1
     nameLabel.Text = name
     nameLabel.Font = CONFIG.FontMedium
-    nameLabel.TextSize = 9
+    nameLabel.TextSize = 8
     nameLabel.TextColor3 = CONFIG.Text
     nameLabel.TextXAlignment = Enum.TextXAlignment.Left
     nameLabel.ZIndex = 13
     nameLabel.Parent = container
     
     local valueLabel = Instance.new("TextLabel")
-    valueLabel.Size = UDim2.new(0.3, 0, 0, 16)
-    valueLabel.Position = UDim2.new(0.7, -10, 0, 6)
+    valueLabel.Size = UDim2.new(0.3, 0, 0, 14)
+    valueLabel.Position = UDim2.new(0.65, -5, 0, 5)
     valueLabel.BackgroundTransparency = 1
     valueLabel.Text = tostring(default)
     valueLabel.Font = CONFIG.FontMedium
-    valueLabel.TextSize = 9
+    valueLabel.TextSize = 8
     valueLabel.TextColor3 = CONFIG.Accent
     valueLabel.TextXAlignment = Enum.TextXAlignment.Right
     valueLabel.ZIndex = 13
     valueLabel.Parent = container
     
     local sliderBg = Instance.new("Frame")
-    sliderBg.Size = UDim2.new(1, -20, 0, 4)
-    sliderBg.Position = UDim2.new(0, 10, 0, 28)
+    sliderBg.Size = UDim2.new(1, -16, 0, 4)
+    sliderBg.Position = UDim2.new(0, 8, 0, 25)
     sliderBg.BackgroundColor3 = CONFIG.SurfaceLight
     sliderBg.BorderSizePixel = 0
     sliderBg.ZIndex = 13
@@ -435,14 +444,6 @@ local function CreateSlider(tabName, name, min, max, default, callback)
     sliderFill.BorderSizePixel = 0
     sliderFill.ZIndex = 14
     sliderFill.Parent = sliderBg
-    
-    local sliderHandle = Instance.new("Frame")
-    sliderHandle.Size = UDim2.new(0, 12, 0, 12)
-    sliderHandle.Position = UDim2.new(1, -6, 0.5, -6)
-    sliderHandle.BackgroundColor3 = Color3.new(1, 1, 1)
-    sliderHandle.BorderSizePixel = 0
-    sliderHandle.ZIndex = 15
-    sliderHandle.Parent = sliderFill
     
     local function updateSlider(input)
         local relativeX = math.clamp((input.Position.X - sliderBg.AbsolutePosition.X) / sliderBg.AbsoluteSize.X, 0, 1)
@@ -473,13 +474,12 @@ local function CreateSlider(tabName, name, min, max, default, callback)
     return container
 end
 
--- Dropdown
 local function CreateDropdown(tabName, name, options, default, callback)
     local content = TabContents[tabName]
     if not content then return end
     
     local container = Instance.new("Frame")
-    container.Size = UDim2.new(1, 0, 0, 48)
+    container.Size = UDim2.new(1, 0, 0, 44)
     container.BackgroundColor3 = CONFIG.Surface
     container.BorderSizePixel = 0
     container.ZIndex = 12
@@ -492,62 +492,50 @@ local function CreateDropdown(tabName, name, options, default, callback)
     containerStroke.Parent = container
     
     local nameLabel = Instance.new("TextLabel")
-    nameLabel.Size = UDim2.new(1, -20, 0, 16)
-    nameLabel.Position = UDim2.new(0, 10, 0, 4)
+    nameLabel.Size = UDim2.new(1, -16, 0, 14)
+    nameLabel.Position = UDim2.new(0, 8, 0, 4)
     nameLabel.BackgroundTransparency = 1
     nameLabel.Text = name
     nameLabel.Font = CONFIG.FontMedium
-    nameLabel.TextSize = 9
+    nameLabel.TextSize = 8
     nameLabel.TextColor3 = CONFIG.Text
     nameLabel.TextXAlignment = Enum.TextXAlignment.Left
     nameLabel.ZIndex = 13
     nameLabel.Parent = container
     
     local dropdownBtn = Instance.new("TextButton")
-    dropdownBtn.Size = UDim2.new(1, -20, 0, 24)
-    dropdownBtn.Position = UDim2.new(0, 10, 0, 20)
+    dropdownBtn.Size = UDim2.new(1, -16, 0, 22)
+    dropdownBtn.Position = UDim2.new(0, 8, 0, 18)
     dropdownBtn.BackgroundColor3 = CONFIG.SurfaceLight
     dropdownBtn.BorderSizePixel = 0
     dropdownBtn.Text = default or options[1]
     dropdownBtn.Font = CONFIG.FontMedium
-    dropdownBtn.TextSize = 9
+    dropdownBtn.TextSize = 8
     dropdownBtn.TextColor3 = CONFIG.Text
     dropdownBtn.ZIndex = 13
     dropdownBtn.AutoButtonColor = false
     dropdownBtn.Parent = container
     
-    local dropdownStroke = Instance.new("UIStroke")
-    dropdownStroke.Color = CONFIG.Border
-    dropdownStroke.Thickness = 1
-    dropdownStroke.Transparency = 0.3
-    dropdownStroke.Parent = dropdownBtn
-    
     local arrow = Instance.new("TextLabel")
-    arrow.Size = UDim2.new(0, 16, 0, 16)
-    arrow.Position = UDim2.new(1, -20, 0, 4)
+    arrow.Size = UDim2.new(0, 14, 0, 14)
+    arrow.Position = UDim2.new(1, -18, 0, 4)
     arrow.BackgroundTransparency = 1
     arrow.Text = "▼"
     arrow.Font = CONFIG.Font
-    arrow.TextSize = 8
+    arrow.TextSize = 7
     arrow.TextColor3 = CONFIG.Accent
     arrow.ZIndex = 14
     arrow.Parent = dropdownBtn
     
     local dropdownList = Instance.new("Frame")
-    dropdownList.Size = UDim2.new(1, -20, 0, 0)
-    dropdownList.Position = UDim2.new(0, 10, 0, 46)
+    dropdownList.Size = UDim2.new(1, -16, 0, 0)
+    dropdownList.Position = UDim2.new(0, 8, 0, 42)
     dropdownList.BackgroundColor3 = CONFIG.Surface
     dropdownList.BorderSizePixel = 0
     dropdownList.ClipsDescendants = true
     dropdownList.Visible = false
     dropdownList.ZIndex = 100
     dropdownList.Parent = container
-    
-    local listStroke = Instance.new("UIStroke")
-    listStroke.Color = CONFIG.Accent
-    listStroke.Thickness = 1
-    listStroke.Transparency = 0.3
-    listStroke.Parent = dropdownList
     
     local listLayout = Instance.new("UIListLayout")
     listLayout.SortOrder = Enum.SortOrder.LayoutOrder
@@ -557,31 +545,31 @@ local function CreateDropdown(tabName, name, options, default, callback)
     
     local function closeDropdown()
         isOpen = false
-        TweenService:Create(dropdownList, TweenInfo.new(0.15), {Size = UDim2.new(1, -20, 0, 0)}):Play()
+        TweenService:Create(dropdownList, TweenInfo.new(0.15), {Size = UDim2.new(1, -16, 0, 0)}):Play()
         task.wait(0.15)
         dropdownList.Visible = false
-        container.Size = UDim2.new(1, 0, 0, 48)
+        container.Size = UDim2.new(1, 0, 0, 44)
         TweenService:Create(arrow, TweenInfo.new(0.15), {Rotation = 0}):Play()
     end
     
     local function openDropdown()
         isOpen = true
         dropdownList.Visible = true
-        local listHeight = math.min(#options * 26, 130)
-        TweenService:Create(dropdownList, TweenInfo.new(0.15), {Size = UDim2.new(1, -20, 0, listHeight)}):Play()
-        container.Size = UDim2.new(1, 0, 0, 48 + listHeight + 4)
+        local listHeight = math.min(#options * 24, 120)
+        TweenService:Create(dropdownList, TweenInfo.new(0.15), {Size = UDim2.new(1, -16, 0, listHeight)}):Play()
+        container.Size = UDim2.new(1, 0, 0, 44 + listHeight + 4)
         TweenService:Create(arrow, TweenInfo.new(0.15), {Rotation = 180}):Play()
     end
     
     for i, option in ipairs(options) do
         local optionBtn = Instance.new("TextButton")
-        optionBtn.Size = UDim2.new(1, 0, 0, 24)
+        optionBtn.Size = UDim2.new(1, 0, 0, 22)
         optionBtn.BackgroundColor3 = option == default and CONFIG.DropdownSelected or CONFIG.SurfaceLight
         optionBtn.BackgroundTransparency = option == default and 0.3 or 0.1
         optionBtn.BorderSizePixel = 0
         optionBtn.Text = option
         optionBtn.Font = CONFIG.FontMedium
-        optionBtn.TextSize = 9
+        optionBtn.TextSize = 8
         optionBtn.TextColor3 = option == default and Color3.new(1, 1, 1) or CONFIG.Text
         optionBtn.ZIndex = 102
         optionBtn.AutoButtonColor = false
@@ -621,6 +609,275 @@ local function CreateDropdown(tabName, name, options, default, callback)
 end
 
 --========================
+-- COLOR PICKER (Right Side)
+--========================
+
+local function CreateColorPicker()
+    -- Title
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Size = UDim2.new(1, -20, 0, 24)
+    titleLabel.Position = UDim2.new(0, 10, 0, 10)
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.Text = "COLOR PICKER"
+    titleLabel.Font = CONFIG.Font
+    titleLabel.TextSize = 12
+    titleLabel.TextColor3 = CONFIG.Accent
+    titleLabel.TextXAlignment = Enum.TextXAlignment.Center
+    titleLabel.ZIndex = 13
+    titleLabel.Parent = RightSide
+    
+    -- Preview
+    local previewFrame = Instance.new("Frame")
+    previewFrame.Size = UDim2.new(1, -40, 0, 60)
+    previewFrame.Position = UDim2.new(0, 20, 0, 40)
+    previewFrame.BackgroundColor3 = CONFIG.Accent
+    previewFrame.BorderSizePixel = 0
+    previewFrame.ZIndex = 13
+    previewFrame.Parent = RightSide
+    
+    local previewStroke = Instance.new("UIStroke")
+    previewStroke.Color = Color3.new(1, 1, 1)
+    previewStroke.Thickness = 2
+    previewStroke.Transparency = 0
+    previewStroke.Parent = previewFrame
+    
+    -- RGB Values Display
+    local rgbLabel = Instance.new("TextLabel")
+    rgbLabel.Size = UDim2.new(1, -40, 0, 20)
+    rgbLabel.Position = UDim2.new(0, 20, 0, 110)
+    rgbLabel.BackgroundTransparency = 1
+    rgbLabel.Text = "RGB: 0, 150, 255"
+    rgbLabel.Font = CONFIG.FontMedium
+    rgbLabel.TextSize = 10
+    rgbLabel.TextColor3 = CONFIG.Text
+    rgbLabel.TextXAlignment = Enum.TextXAlignment.Center
+    rgbLabel.ZIndex = 13
+    rgbLabel.Parent = RightSide
+    
+    -- Red Slider
+    local redLabel = Instance.new("TextLabel")
+    redLabel.Size = UDim2.new(0, 30, 0, 20)
+    redLabel.Position = UDim2.new(0, 20, 0, 140)
+    redLabel.BackgroundTransparency = 1
+    redLabel.Text = "R:"
+    redLabel.Font = CONFIG.Font
+    redLabel.TextSize = 10
+    redLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+    redLabel.TextXAlignment = Enum.TextXAlignment.Left
+    redLabel.ZIndex = 13
+    redLabel.Parent = RightSide
+    
+    local redSlider = Instance.new("Frame")
+    redSlider.Size = UDim2.new(1, -80, 0, 8)
+    redSlider.Position = UDim2.new(0, 50, 0, 146)
+    redSlider.BackgroundColor3 = CONFIG.SurfaceLight
+    redSlider.BorderSizePixel = 0
+    redSlider.ZIndex = 13
+    redSlider.Parent = RightSide
+    
+    local redFill = Instance.new("Frame")
+    redFill.Size = UDim2.new(0.59, 0, 1, 0)
+    redFill.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    redFill.BorderSizePixel = 0
+    redFill.ZIndex = 14
+    redFill.Parent = redSlider
+    
+    -- Green Slider
+    local greenLabel = Instance.new("TextLabel")
+    greenLabel.Size = UDim2.new(0, 30, 0, 20)
+    greenLabel.Position = UDim2.new(0, 20, 0, 170)
+    greenLabel.BackgroundTransparency = 1
+    greenLabel.Text = "G:"
+    greenLabel.Font = CONFIG.Font
+    greenLabel.TextSize = 10
+    greenLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+    greenLabel.TextXAlignment = Enum.TextXAlignment.Left
+    greenLabel.ZIndex = 13
+    greenLabel.Parent = RightSide
+    
+    local greenSlider = Instance.new("Frame")
+    greenSlider.Size = UDim2.new(1, -80, 0, 8)
+    greenSlider.Position = UDim2.new(0, 50, 0, 176)
+    greenSlider.BackgroundColor3 = CONFIG.SurfaceLight
+    greenSlider.BorderSizePixel = 0
+    greenSlider.ZIndex = 13
+    greenSlider.Parent = RightSide
+    
+    local greenFill = Instance.new("Frame")
+    greenFill.Size = UDim2.new(0.59, 0, 1, 0)
+    greenFill.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+    greenFill.BorderSizePixel = 0
+    greenFill.ZIndex = 14
+    greenFill.Parent = greenSlider
+    
+    -- Blue Slider
+    local blueLabel = Instance.new("TextLabel")
+    blueLabel.Size = UDim2.new(0, 30, 0, 20)
+    blueLabel.Position = UDim2.new(0, 20, 0, 200)
+    blueLabel.BackgroundTransparency = 1
+    blueLabel.Text = "B:"
+    blueLabel.Font = CONFIG.Font
+    blueLabel.TextSize = 10
+    blueLabel.TextColor3 = Color3.fromRGB(0, 0, 255)
+    blueLabel.TextXAlignment = Enum.TextXAlignment.Left
+    blueLabel.ZIndex = 13
+    blueLabel.Parent = RightSide
+    
+    local blueSlider = Instance.new("Frame")
+    blueSlider.Size = UDim2.new(1, -80, 0, 8)
+    blueSlider.Position = UDim2.new(0, 50, 0, 206)
+    blueSlider.BackgroundColor3 = CONFIG.SurfaceLight
+    blueSlider.BorderSizePixel = 0
+    blueSlider.ZIndex = 13
+    blueSlider.Parent = RightSide
+    
+    local blueFill = Instance.new("Frame")
+    blueFill.Size = UDim2.new(1, 0, 1, 0)
+    blueFill.BackgroundColor3 = Color3.fromRGB(0, 0, 255)
+    blueFill.BorderSizePixel = 0
+    blueFill.ZIndex = 14
+    blueFill.Parent = blueSlider
+    
+    -- Preset Colors
+    local presetLabel = Instance.new("TextLabel")
+    presetLabel.Size = UDim2.new(1, -40, 0, 20)
+    presetLabel.Position = UDim2.new(0, 20, 0, 230)
+    presetLabel.BackgroundTransparency = 1
+    presetLabel.Text = "PRESET COLORS"
+    presetLabel.Font = CONFIG.Font
+    presetLabel.TextSize = 9
+    presetLabel.TextColor3 = CONFIG.TextSecondary
+    presetLabel.TextXAlignment = Enum.TextXAlignment.Left
+    presetLabel.ZIndex = 13
+    presetLabel.Parent = RightSide
+    
+    local presetColors = {
+        Color3.fromRGB(255, 0, 0),
+        Color3.fromRGB(0, 255, 0),
+        Color3.fromRGB(0, 0, 255),
+        Color3.fromRGB(255, 255, 0),
+        Color3.fromRGB(255, 0, 255),
+        Color3.fromRGB(0, 255, 255),
+        Color3.fromRGB(255, 255, 255),
+        Color3.fromRGB(0, 0, 0),
+        Color3.fromRGB(255, 128, 0),
+        Color3.fromRGB(128, 0, 255),
+    }
+    
+    local currentColor = CONFIG.Accent
+    
+    local function updateColor(color)
+        currentColor = color
+        previewFrame.BackgroundColor3 = color
+        rgbLabel.Text = string.format("RGB: %d, %d, %d", math.floor(color.R * 255), math.floor(color.G * 255), math.floor(color.B * 255))
+        
+        redFill.Size = UDim2.new(color.R, 0, 1, 0)
+        greenFill.Size = UDim2.new(color.G, 0, 1, 0)
+        blueFill.Size = UDim2.new(color.B, 0, 1, 0)
+    end
+    
+    -- Create preset buttons
+    for i, color in ipairs(presetColors) do
+        local presetBtn = Instance.new("TextButton")
+        presetBtn.Size = UDim2.new(0, 24, 0, 24)
+        presetBtn.Position = UDim2.new(0, 20 + ((i - 1) % 5) * 30, 0, 255 + math.floor((i - 1) / 5) * 30)
+        presetBtn.BackgroundColor3 = color
+        presetBtn.BorderSizePixel = 0
+        presetBtn.Text = ""
+        presetBtn.AutoButtonColor = false
+        presetBtn.ZIndex = 13
+        presetBtn.Parent = RightSide
+        
+        local presetStroke = Instance.new("UIStroke")
+        presetStroke.Color = Color3.new(1, 1, 1)
+        presetStroke.Thickness = 1
+        presetStroke.Transparency = 0.5
+        presetStroke.Parent = presetBtn
+        
+        presetBtn.MouseButton1Click:Connect(function()
+            updateColor(color)
+        end)
+    end
+    
+    -- Slider functions
+    local function updateSlider(slider, fill, component)
+        return function(input)
+            local relativeX = math.clamp((input.Position.X - slider.AbsolutePosition.X) / slider.AbsoluteSize.X, 0, 1)
+            fill.Size = UDim2.new(relativeX, 0, 1, 0)
+            
+            if component == "R" then
+                currentColor = Color3.new(relativeX, currentColor.G, currentColor.B)
+            elseif component == "G" then
+                currentColor = Color3.new(currentColor.R, relativeX, currentColor.B)
+            elseif component == "B" then
+                currentColor = Color3.new(currentColor.R, currentColor.G, relativeX)
+            end
+            
+            previewFrame.BackgroundColor3 = currentColor
+            rgbLabel.Text = string.format("RGB: %d, %d, %d", math.floor(currentColor.R * 255), math.floor(currentColor.G * 255), math.floor(currentColor.B * 255))
+        end
+    end
+    
+    -- Connect sliders
+    redSlider.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            updateSlider(redSlider, redFill, "R")(input)
+            local moveConn, endConn
+            moveConn = UIS.InputChanged:Connect(function(moveInput)
+                if moveInput.UserInputType == Enum.UserInputType.MouseMovement or moveInput.UserInputType == Enum.UserInputType.Touch then
+                    updateSlider(redSlider, redFill, "R")(moveInput)
+                end
+            end)
+            endConn = UIS.InputEnded:Connect(function(endInput)
+                if endInput.UserInputType == Enum.UserInputType.MouseButton1 or endInput.UserInputType == Enum.UserInputType.Touch then
+                    if moveConn then moveConn:Disconnect() end
+                    if endConn then endConn:Disconnect() end
+                end
+            end)
+        end
+    end)
+    
+    greenSlider.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            updateSlider(greenSlider, greenFill, "G")(input)
+            local moveConn, endConn
+            moveConn = UIS.InputChanged:Connect(function(moveInput)
+                if moveInput.UserInputType == Enum.UserInputType.MouseMovement or moveInput.UserInputType == Enum.UserInputType.Touch then
+                    updateSlider(greenSlider, greenFill, "G")(moveInput)
+                end
+            end)
+            endConn = UIS.InputEnded:Connect(function(endInput)
+                if endInput.UserInputType == Enum.UserInputType.MouseButton1 or endInput.UserInputType == Enum.UserInputType.Touch then
+                    if moveConn then moveConn:Disconnect() end
+                    if endConn then endConn:Disconnect() end
+                end
+            end)
+        end
+    end)
+    
+    blueSlider.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            updateSlider(blueSlider, blueFill, "B")(input)
+            local moveConn, endConn
+            moveConn = UIS.InputChanged:Connect(function(moveInput)
+                if moveInput.UserInputType == Enum.UserInputType.MouseMovement or moveInput.UserInputType == Enum.UserInputType.Touch then
+                    updateSlider(blueSlider, blueFill, "B")(moveInput)
+                end
+            end)
+            endConn = UIS.InputEnded:Connect(function(endInput)
+                if endInput.UserInputType == Enum.UserInputType.MouseButton1 or endInput.UserInputType == Enum.UserInputType.Touch then
+                    if moveConn then moveConn:Disconnect() end
+                    if endConn then endConn:Disconnect() end
+                end
+            end)
+        end
+    end)
+end
+
+-- Initialize Color Picker
+CreateColorPicker()
+
+--========================
 -- EXAMPLE CONTENT
 --========================
 
@@ -632,16 +889,10 @@ end)
 CreateToggle("Tab 1", "Toggle Test 2", true, function(state)
     print("Toggle 2: " .. tostring(state))
 end)
-CreateToggle("Tab 1", "Toggle Test 3", false, function(state)
-    print("Toggle 3: " .. tostring(state))
-end)
 
 CreateSectionLabel("Tab 1", "BUTTONS")
 CreateButton("Tab 1", "Button Test 1", function()
     print("Button 1 clicked!")
-end)
-CreateButton("Tab 1", "Button Test 2", function()
-    print("Button 2 clicked!")
 end)
 
 -- TAB 2
@@ -649,40 +900,22 @@ CreateSectionLabel("Tab 2", "SLIDERS")
 CreateSlider("Tab 2", "Slider Test 1", 0, 100, 50, function(value)
     print("Slider 1: " .. value)
 end)
-CreateSlider("Tab 2", "Slider Test 2", 1, 10, 5, function(value)
-    print("Slider 2: " .. value)
-end)
-CreateSlider("Tab 2", "Slider Test 3", -50, 50, 0, function(value)
-    print("Slider 3: " .. value)
-end)
 
 CreateSectionLabel("Tab 2", "DROPDOWNS")
-CreateDropdown("Tab 2", "Dropdown Test 1", {"Option 1", "Option 2", "Option 3", "Option 4"}, "Option 1", function(option)
+CreateDropdown("Tab 2", "Dropdown Test 1", {"Option 1", "Option 2", "Option 3"}, "Option 1", function(option)
     print("Dropdown 1: " .. option)
-end)
-CreateDropdown("Tab 2", "Dropdown Test 2", {"Low", "Medium", "High", "Ultra"}, "Medium", function(option)
-    print("Dropdown 2: " .. option)
 end)
 
 -- TAB 3
-CreateSectionLabel("Tab 3", "MIXED COMPONENTS")
-CreateToggle("Tab 3", "Toggle Test 4", false, function(state)
-    print("Toggle 4: " .. tostring(state))
+CreateSectionLabel("Tab 3", "MIXED")
+CreateToggle("Tab 3", "Toggle Test 3", false, function(state)
+    print("Toggle 3: " .. tostring(state))
 end)
-CreateSlider("Tab 3", "Slider Test 4", 1, 20, 10, function(value)
-    print("Slider 4: " .. value)
+CreateSlider("Tab 3", "Slider Test 2", 1, 10, 5, function(value)
+    print("Slider 2: " .. value)
 end)
-CreateButton("Tab 3", "Button Test 3", function()
-    print("Button 3 clicked!")
-end)
-CreateDropdown("Tab 3", "Dropdown Test 3", {"Choice A", "Choice B", "Choice C"}, "Choice A", function(option)
-    print("Dropdown 3: " .. option)
-end)
-CreateToggle("Tab 3", "Toggle Test 5", true, function(state)
-    print("Toggle 5: " .. tostring(state))
-end)
-CreateButton("Tab 3", "Button Test 4", function()
-    print("Button 4 clicked!")
+CreateButton("Tab 3", "Button Test 2", function()
+    print("Button 2 clicked!")
 end)
 
 -- Update canvas sizes
@@ -747,4 +980,4 @@ if isMobile then
     end)
 end
 
-print("[Oishi Hub UI Library] Loaded!")
+print("[Oishi Hub UI Library] Loaded with Two-Sided Layout + Color Picker!")
