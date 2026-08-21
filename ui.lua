@@ -1,20 +1,6 @@
 --==================================================
 -- OISHI HUB UI LIBRARY + MOBILE-SAFE ESP
 -- Full Mobile + PC Version
---
--- Features:
--- • Left / Right layout
--- • Smooth UI animations
--- • Animated tab switching
--- • Animated dropdowns
--- • Smooth circular color picker
--- • White slider knobs
--- • PC + Mobile slider dragging
--- • Slider does NOT drag the main UI
--- • Header-only UI dragging
--- • Mobile Toggle UI
--- • Mobile Lock / Unlock
--- • Full ESP Features
 --==================================================
 
 local Players = game:GetService("Players")
@@ -46,6 +32,8 @@ local ESP = {
     NameColor = Color3.fromRGB(255, 255, 255),
     HealthColor = Color3.fromRGB(0, 255, 0),
     TracerColor = Color3.fromRGB(255, 255, 255),
+    HeadDotColor = Color3.fromRGB(255, 255, 255),
+    DistanceColor = Color3.fromRGB(255, 255, 255),
     MaxDistance = 1000,
 }
 
@@ -73,12 +61,6 @@ local function create(className, properties, parent)
     end
     object.Parent = parent
     return object
-end
-
-local function hideObject(object)
-    if object then
-        object.Visible = false
-    end
 end
 
 local function destroyESP(player)
@@ -130,27 +112,22 @@ local function createESP(player)
         Size = UDim2.fromOffset(1, 1),
         Position = UDim2.fromOffset(0, 0),
         Visible = false,
+        ZIndex = 1,
     }, ESPGui)
 
-    local box = create("Frame", {
-        Name = "Box",
-        BackgroundTransparency = 1,
-        BorderSizePixel = 2,
-        BorderColor3 = ESP.BoxColor,
-        Visible = false,
-    }, gui)
+    -- Box (using 4 lines for better visibility)
+    local boxLines = {}
+    for i = 1, 4 do
+        boxLines[i] = create("Frame", {
+            Name = "BoxLine" .. i,
+            BackgroundColor3 = ESP.BoxColor,
+            BorderSizePixel = 0,
+            Visible = false,
+            ZIndex = 2,
+        }, gui)
+    end
 
-    local boxOutline = create("Frame", {
-        Name = "BoxOutline",
-        BackgroundTransparency = 1,
-        BorderSizePixel = 4,
-        BorderColor3 = Color3.new(0, 0, 0),
-        Visible = false,
-        ZIndex = 1,
-    }, gui)
-
-    box.ZIndex = 2
-
+    -- Name
     local name = create("TextLabel", {
         Name = "Name",
         BackgroundTransparency = 1,
@@ -167,12 +144,13 @@ local function createESP(player)
         ZIndex = 5,
     }, gui)
 
+    -- Distance
     local distance = create("TextLabel", {
         Name = "Distance",
         BackgroundTransparency = 1,
         BorderSizePixel = 0,
         Text = "",
-        TextColor3 = Color3.new(1, 1, 1),
+        TextColor3 = ESP.DistanceColor,
         TextStrokeColor3 = Color3.new(0, 0, 0),
         TextStrokeTransparency = 0,
         TextSize = 13,
@@ -183,6 +161,7 @@ local function createESP(player)
         ZIndex = 5,
     }, gui)
 
+    -- Health Bar Background
     local healthBG = create("Frame", {
         Name = "HealthBG",
         BackgroundColor3 = Color3.new(0, 0, 0),
@@ -191,6 +170,7 @@ local function createESP(player)
         ZIndex = 3,
     }, gui)
 
+    -- Health Bar
     local healthBar = create("Frame", {
         Name = "HealthBar",
         BackgroundColor3 = ESP.HealthColor,
@@ -199,9 +179,10 @@ local function createESP(player)
         ZIndex = 4,
     }, gui)
 
+    -- Head Dot
     local headDot = create("Frame", {
         Name = "HeadDot",
-        BackgroundColor3 = ESP.BoxColor,
+        BackgroundColor3 = ESP.HeadDotColor,
         BorderSizePixel = 0,
         Visible = false,
         ZIndex = 6,
@@ -211,6 +192,7 @@ local function createESP(player)
     headCorner.CornerRadius = UDim.new(1, 0)
     headCorner.Parent = headDot
 
+    -- Tracer
     local tracer = create("Frame", {
         Name = "Tracer",
         BackgroundColor3 = ESP.TracerColor,
@@ -221,8 +203,7 @@ local function createESP(player)
 
     ESPObjects[player] = {
         Gui = gui,
-        Box = box,
-        BoxOutline = boxOutline,
+        BoxLines = boxLines,
         Name = name,
         Distance = distance,
         HealthBG = healthBG,
@@ -313,8 +294,11 @@ local function hideESP(data)
     end
 
     data.Gui.Visible = false
-    data.Box.Visible = false
-    data.BoxOutline.Visible = false
+    
+    for _, line in ipairs(data.BoxLines) do
+        line.Visible = false
+    end
+    
     data.Name.Visible = false
     data.Distance.Visible = false
     data.HealthBG.Visible = false
@@ -385,19 +369,29 @@ local function updatePlayer(player, camera)
 
     data.Gui.Visible = true
 
-    -- Box
+    -- Draw Box using 4 lines
     if ESP.Boxes then
-        data.Box.Visible = true
-        data.Box.Position = UDim2.fromOffset(minX, minY)
-        data.Box.Size = UDim2.fromOffset(width, height)
-        data.Box.BorderColor3 = ESP.BoxColor
-
-        data.BoxOutline.Visible = true
-        data.BoxOutline.Position = UDim2.fromOffset(minX - 2, minY - 2)
-        data.BoxOutline.Size = UDim2.fromOffset(width + 4, height + 4)
+        local thickness = 1
+        
+        -- Top line
+        data.BoxLines[1].BackgroundColor3 = ESP.BoxColor
+        setLine(data.BoxLines[1], Vector2.new(minX, minY), Vector2.new(maxX, minY), thickness)
+        
+        -- Bottom line
+        data.BoxLines[2].BackgroundColor3 = ESP.BoxColor
+        setLine(data.BoxLines[2], Vector2.new(minX, maxY), Vector2.new(maxX, maxY), thickness)
+        
+        -- Left line
+        data.BoxLines[3].BackgroundColor3 = ESP.BoxColor
+        setLine(data.BoxLines[3], Vector2.new(minX, minY), Vector2.new(minX, maxY), thickness)
+        
+        -- Right line
+        data.BoxLines[4].BackgroundColor3 = ESP.BoxColor
+        setLine(data.BoxLines[4], Vector2.new(maxX, minY), Vector2.new(maxX, maxY), thickness)
     else
-        data.Box.Visible = false
-        data.BoxOutline.Visible = false
+        for _, line in ipairs(data.BoxLines) do
+            line.Visible = false
+        end
     end
 
     -- Name
@@ -445,6 +439,7 @@ local function updatePlayer(player, camera)
         data.Distance.Position = UDim2.fromOffset(minX, maxY + 3)
         data.Distance.Size = UDim2.fromOffset(width, 18)
         data.Distance.Text = tostring(distanceValue) .. "m"
+        data.Distance.TextColor3 = ESP.DistanceColor
     else
         data.Distance.Visible = false
     end
@@ -458,7 +453,7 @@ local function updatePlayer(player, camera)
             data.HeadDot.Visible = true
             data.HeadDot.Position = UDim2.fromOffset(headPosition.X - dotSize / 2, headPosition.Y - dotSize / 2)
             data.HeadDot.Size = UDim2.fromOffset(dotSize, dotSize)
-            data.HeadDot.BackgroundColor3 = ESP.BoxColor
+            data.HeadDot.BackgroundColor3 = ESP.HeadDotColor
         else
             data.HeadDot.Visible = false
         end
@@ -466,17 +461,17 @@ local function updatePlayer(player, camera)
         data.HeadDot.Visible = false
     end
 
-    -- Tracer
+    -- Tracer (fixed to go from bottom of screen to player)
     if ESP.Tracers then
         local targetPosition, onScreen = camera:WorldToViewportPoint(root.Position)
 
         if onScreen and targetPosition.Z > 0 then
             local viewport = camera.ViewportSize
-            local startPosition = Vector2.new(viewport.X / 2, viewport.Y)
+            local startPosition = Vector2.new(targetPosition.X, viewport.Y)
             local endPosition = Vector2.new(targetPosition.X, targetPosition.Y)
 
             data.Tracer.BackgroundColor3 = ESP.TracerColor
-            setLine(data.Tracer, startPosition, endPosition, 1)
+            setLine(data.Tracer, startPosition, endPosition, 2)
         else
             data.Tracer.Visible = false
         end
@@ -742,7 +737,8 @@ TabFrame.Parent = LeftSide
 
 local Tabs = {
     {name = "Toggles"},
-    {name = "Colors"},
+    {name = "Box ESP"},
+    {name = "Visuals"},
     {name = "Settings"},
 }
 
@@ -765,14 +761,14 @@ ContentContainer.Parent = LeftSide
 
 for i, tab in ipairs(Tabs) do
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1 / 3, -1, 0, 22)
-    btn.Position = UDim2.new((i - 1) * (1 / 3), 0.5, 0, 2)
+    btn.Size = UDim2.new(1 / #Tabs, -1, 0, 22)
+    btn.Position = UDim2.new((i - 1) * (1 / #Tabs), 0.5, 0, 2)
     btn.BackgroundColor3 = tab.name == currentTab and CONFIG.TabActive or CONFIG.TabInactive
     btn.BackgroundTransparency = tab.name == currentTab and 0.3 or 0.5
     btn.BorderSizePixel = 0
     btn.Text = tab.name
     btn.Font = CONFIG.Font
-    btn.TextSize = 8
+    btn.TextSize = 7
     btn.TextColor3 = tab.name == currentTab and Color3.new(1,1,1) or CONFIG.Text
     btn.ZIndex = 12
     btn.AutoButtonColor = false
@@ -1335,7 +1331,7 @@ local function CreateRainbowColorPicker(tabName, name, callback)
     local preview = Instance.new("TextButton")
     preview.Size = UDim2.new(0, 24, 0, 24)
     preview.Position = UDim2.new(1, -32, 0, 5)
-    preview.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    preview.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     preview.BorderSizePixel = 0
     preview.Text = ""
     preview.AutoButtonColor = false
@@ -1477,7 +1473,7 @@ local function CreateRainbowColorPicker(tabName, name, callback)
         rgb.Size = UDim2.new(1, -20, 0, 20)
         rgb.Position = UDim2.new(0, 10, 0, 193)
         rgb.BackgroundTransparency = 1
-        rgb.Text = "RGB: 255, 0, 0"
+        rgb.Text = "RGB: 255, 255, 255"
         rgb.Font = CONFIG.FontMedium
         rgb.TextSize = 9
         rgb.TextColor3 = CONFIG.Text
@@ -1621,47 +1617,66 @@ CreateToggle("Toggles", "ESP Enabled", true, function(state)
     ESP.Enabled = state
 end)
 
-CreateToggle("Toggles", "Boxes", true, function(state)
-    ESP.Boxes = state
-end)
-
-CreateToggle("Toggles", "Names", true, function(state)
-    ESP.Names = state
-end)
-
-CreateToggle("Toggles", "Health Bars", true, function(state)
-    ESP.HealthBar = state
-end)
-
-CreateToggle("Toggles", "Distance", true, function(state)
-    ESP.Distance = state
-end)
-
-CreateToggle("Toggles", "Tracers", true, function(state)
-    ESP.Tracers = state
-end)
-
-CreateToggle("Toggles", "Head Dots", true, function(state)
-    ESP.HeadDots = state
-end)
-
 CreateToggle("Toggles", "Team Check", true, function(state)
     ESP.TeamCheck = state
 end)
 
--- Colors Tab
-CreateSectionLabel("Colors", "ESP COLORS")
+-- Box ESP Tab
+CreateSectionLabel("Box ESP", "BOX SETTINGS")
 
-CreateRainbowColorPicker("Colors", "Box Color", function(color)
+CreateToggle("Box ESP", "Boxes", true, function(state)
+    ESP.Boxes = state
+end)
+
+CreateRainbowColorPicker("Box ESP", "Box Color", function(color)
     ESP.BoxColor = color
 end)
 
-CreateRainbowColorPicker("Colors", "Name Color", function(color)
+CreateSectionLabel("Box ESP", "NAME SETTINGS")
+
+CreateToggle("Box ESP", "Names", true, function(state)
+    ESP.Names = state
+end)
+
+CreateRainbowColorPicker("Box ESP", "Name Color", function(color)
     ESP.NameColor = color
 end)
 
-CreateRainbowColorPicker("Colors", "Tracer Color", function(color)
+CreateSectionLabel("Box ESP", "HEALTH BAR")
+
+CreateToggle("Box ESP", "Health Bars", true, function(state)
+    ESP.HealthBar = state
+end)
+
+-- Visuals Tab
+CreateSectionLabel("Visuals", "DISTANCE")
+
+CreateToggle("Visuals", "Distance", true, function(state)
+    ESP.Distance = state
+end)
+
+CreateRainbowColorPicker("Visuals", "Distance Color", function(color)
+    ESP.DistanceColor = color
+end)
+
+CreateSectionLabel("Visuals", "TRACERS")
+
+CreateToggle("Visuals", "Tracers", true, function(state)
+    ESP.Tracers = state
+end)
+
+CreateRainbowColorPicker("Visuals", "Tracer Color", function(color)
     ESP.TracerColor = color
+end)
+
+CreateSectionLabel("Visuals", "HEAD DOTS")
+
+CreateToggle("Visuals", "Head Dots", true, function(state)
+    ESP.HeadDots = state
+end)
+
+CreateRainbowColorPicker("Visuals", "Head Dot Color", function(color)
+    ESP.HeadDotColor = color
 end)
 
 -- Settings Tab
@@ -1849,5 +1864,6 @@ if isPC then
 end
 
 print("[Oishi Hub UI Library + ESP] Loaded!")
-print("[ESP] Features: Boxes, Names, Health Bars, Distance, Tracers, Head Dots, Team Check")
-print("[ESP] Mobile + PC compatible")
+print("[ESP] Box ESP: Fixed with 4 lines")
+print("[ESP] Tracers: Fixed to go from bottom to player")
+print("[ESP] Individual color pickers for each feature")
