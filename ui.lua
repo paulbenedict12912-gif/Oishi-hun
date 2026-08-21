@@ -466,8 +466,8 @@ local function CreateRainbowColorPicker(tabName, name, callback)
     
     previewBtn.MouseButton1Click:Connect(function()
         local PickerPopup = Instance.new("Frame")
-        PickerPopup.Size = UDim2.new(0, 170, 0, 170)
-        PickerPopup.Position = UDim2.new(0, previewBtn.AbsolutePosition.X - 140, 0, previewBtn.AbsolutePosition.Y - 170)
+        PickerPopup.Size = UDim2.new(0, 180, 0, 200)
+        PickerPopup.Position = UDim2.new(0, previewBtn.AbsolutePosition.X - 150, 0, previewBtn.AbsolutePosition.Y - 200)
         PickerPopup.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
         PickerPopup.BorderSizePixel = 0
         PickerPopup.ZIndex = 999
@@ -482,12 +482,12 @@ local function CreateRainbowColorPicker(tabName, name, callback)
         popupStroke.Thickness = 1
         popupStroke.Parent = PickerPopup
         
-        -- Rainbow Color Wheel (static circle with gradient)
-        local colorWheel = Instance.new("ImageLabel")
-        colorWheel.Size = UDim2.new(0, 120, 0, 120)
+        -- Create HSV Color Wheel using UIGradient
+        local colorWheel = Instance.new("Frame")
+        colorWheel.Size = UDim2.new(0, 130, 0, 130)
         colorWheel.Position = UDim2.new(0, 25, 0, 15)
-        colorWheel.BackgroundTransparency = 1
-        colorWheel.Image = "rbxassetid://4155801252" -- Rainbow color wheel image
+        colorWheel.BackgroundColor3 = Color3.new(1, 1, 1)
+        colorWheel.BorderSizePixel = 0
         colorWheel.ZIndex = 1000
         colorWheel.Parent = PickerPopup
         
@@ -495,13 +495,40 @@ local function CreateRainbowColorPicker(tabName, name, callback)
         wheelCorner.CornerRadius = UDim.new(1, 0)
         wheelCorner.Parent = colorWheel
         
+        -- Conic gradient for rainbow wheel
+        local conicGradient = Instance.new("UIGradient")
+        conicGradient.Rotation = 0
+        conicGradient.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)),      -- Red
+            ColorSequenceKeypoint.new(0.166, Color3.fromRGB(255, 255, 0)), -- Yellow
+            ColorSequenceKeypoint.new(0.333, Color3.fromRGB(0, 255, 0)),   -- Green
+            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 255, 255)),   -- Cyan
+            ColorSequenceKeypoint.new(0.666, Color3.fromRGB(0, 0, 255)),   -- Blue
+            ColorSequenceKeypoint.new(0.833, Color3.fromRGB(255, 0, 255)), -- Magenta
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 0)),       -- Red again
+        })
+        conicGradient.Parent = colorWheel
+        
+        -- White center overlay for saturation
+        local whiteOverlay = Instance.new("Frame")
+        whiteOverlay.Size = UDim2.new(1, 0, 1, 0)
+        whiteOverlay.BackgroundColor3 = Color3.new(1, 1, 1)
+        whiteOverlay.BackgroundTransparency = 0.5
+        whiteOverlay.BorderSizePixel = 0
+        whiteOverlay.ZIndex = 1001
+        whiteOverlay.Parent = colorWheel
+        
+        local whiteCorner = Instance.new("UICorner")
+        whiteCorner.CornerRadius = UDim.new(1, 0)
+        whiteCorner.Parent = whiteOverlay
+        
         -- Color selection cursor
         local cursor = Instance.new("Frame")
-        cursor.Size = UDim2.new(0, 8, 0, 8)
-        cursor.Position = UDim2.new(0.5, -4, 0.5, -4)
+        cursor.Size = UDim2.new(0, 10, 0, 10)
+        cursor.Position = UDim2.new(0.5, -5, 0.5, -5)
         cursor.BackgroundColor3 = Color3.new(1, 1, 1)
         cursor.BorderSizePixel = 0
-        cursor.ZIndex = 1001
+        cursor.ZIndex = 1002
         cursor.Parent = colorWheel
         
         local cursorCorner = Instance.new("UICorner")
@@ -510,50 +537,99 @@ local function CreateRainbowColorPicker(tabName, name, callback)
         
         local cursorStroke = Instance.new("UIStroke")
         cursorStroke.Color = Color3.new(0, 0, 0)
-        cursorStroke.Thickness = 1
+        cursorStroke.Thickness = 2
         cursorStroke.Parent = cursor
         
+        -- RGB Display
+        local rgbLabel = Instance.new("TextLabel")
+        rgbLabel.Size = UDim2.new(1, -20, 0, 20)
+        rgbLabel.Position = UDim2.new(0, 10, 0, 155)
+        rgbLabel.BackgroundTransparency = 1
+        rgbLabel.Text = "RGB: 255, 0, 0"
+        rgbLabel.Font = CONFIG.FontMedium
+        rgbLabel.TextSize = 9
+        rgbLabel.TextColor3 = CONFIG.Text
+        rgbLabel.TextXAlignment = Enum.TextXAlignment.Center
+        rgbLabel.ZIndex = 1000
+        rgbLabel.Parent = PickerPopup
+        
+        -- Preset colors row
+        local presets = {
+            Color3.fromRGB(255, 0, 0), Color3.fromRGB(255, 128, 0), Color3.fromRGB(255, 255, 0),
+            Color3.fromRGB(0, 255, 0), Color3.fromRGB(0, 255, 255), Color3.fromRGB(0, 0, 255),
+            Color3.fromRGB(255, 0, 255), Color3.fromRGB(255, 255, 255), Color3.fromRGB(0, 0, 0),
+        }
+        
+        for i, preset in ipairs(presets) do
+            local presetBtn = Instance.new("TextButton")
+            presetBtn.Size = UDim2.new(0, 16, 0, 16)
+            presetBtn.Position = UDim2.new(0, 10 + ((i - 1) % 9) * 18, 0, 178)
+            presetBtn.BackgroundColor3 = preset
+            presetBtn.BorderSizePixel = 0
+            presetBtn.Text = ""
+            presetBtn.AutoButtonColor = false
+            presetBtn.ZIndex = 1000
+            presetBtn.Parent = PickerPopup
+            
+            presetBtn.MouseButton1Click:Connect(function()
+                currentColor = preset
+                previewBtn.BackgroundColor3 = preset
+                rgbLabel.Text = string.format("RGB: %d, %d, %d", math.floor(preset.R * 255), math.floor(preset.G * 255), math.floor(preset.B * 255))
+                if callback then callback(preset) end
+            end)
+        end
+        
         -- Click on wheel to pick color
+        local function pickColor(input)
+            local wheelPos = colorWheel.AbsolutePosition
+            local wheelSize = colorWheel.AbsoluteSize
+            local centerX = wheelPos.X + wheelSize.X / 2
+            local centerY = wheelPos.Y + wheelSize.Y / 2
+            
+            local dx = input.Position.X - centerX
+            local dy = input.Position.Y - centerY
+            local distance = math.sqrt(dx * dx + dy * dy)
+            local radius = wheelSize.X / 2
+            
+            -- Clamp to wheel
+            local clampedX = dx
+            local clampedY = dy
+            if distance > radius then
+                local scale = radius / distance
+                clampedX = dx * scale
+                clampedY = dy * scale
+                distance = radius
+            end
+            
+            -- Calculate hue from angle
+            local angle = math.atan2(clampedY, clampedX)
+            local hue = (angle + math.pi) / (2 * math.pi)
+            
+            -- Calculate saturation from distance (0 at center, 1 at edge)
+            local saturation = math.clamp(distance / radius, 0, 1)
+            
+            -- Get color from HSV
+            local pickedColor = Color3.fromHSV(hue, saturation, 1)
+            currentColor = pickedColor
+            previewBtn.BackgroundColor3 = pickedColor
+            rgbLabel.Text = string.format("RGB: %d, %d, %d", math.floor(pickedColor.R * 255), math.floor(pickedColor.G * 255), math.floor(pickedColor.B * 255))
+            
+            -- Update cursor position
+            local relX = math.clamp((clampedX + radius) / (radius * 2), 0, 1)
+            local relY = math.clamp((clampedY + radius) / (radius * 2), 0, 1)
+            cursor.Position = UDim2.new(relX, -5, relY, -5)
+            
+            if callback then callback(pickedColor) end
+        end
+        
         colorWheel.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                local function updateColor(position)
-                    local wheelPos = colorWheel.AbsolutePosition
-                    local wheelSize = colorWheel.AbsoluteSize
-                    local centerX = wheelPos.X + wheelSize.X / 2
-                    local centerY = wheelPos.Y + wheelSize.Y / 2
-                    
-                    local dx = position.X - centerX
-                    local dy = position.Y - centerY
-                    local distance = math.sqrt(dx * dx + dy * dy)
-                    local radius = wheelSize.X / 2
-                    
-                    if distance <= radius then
-                        -- Calculate angle for hue
-                        local angle = math.atan2(dy, dx)
-                        local hue = (angle + math.pi) / (2 * math.pi)
-                        
-                        -- Calculate saturation based on distance from center
-                        local saturation = math.clamp(distance / radius, 0, 1)
-                        
-                        -- Set color
-                        currentColor = Color3.fromHSV(hue, saturation, 1)
-                        previewBtn.BackgroundColor3 = currentColor
-                        
-                        -- Update cursor position
-                        local relX = math.clamp((position.X - wheelPos.X) / wheelSize.X, 0, 1)
-                        local relY = math.clamp((position.Y - wheelPos.Y) / wheelSize.Y, 0, 1)
-                        cursor.Position = UDim2.new(relX, -4, relY, -4)
-                        
-                        if callback then callback(currentColor) end
-                    end
-                end
-                
-                updateColor(input.Position)
+                pickColor(input)
                 
                 local moveConn, endConn
                 moveConn = UIS.InputChanged:Connect(function(moveInput)
                     if moveInput.UserInputType == Enum.UserInputType.MouseMovement or moveInput.UserInputType == Enum.UserInputType.Touch then
-                        updateColor(moveInput.Position)
+                        pickColor(moveInput)
                     end
                 end)
                 endConn = UIS.InputEnded:Connect(function(endInput)
@@ -564,31 +640,6 @@ local function CreateRainbowColorPicker(tabName, name, callback)
                 end)
             end
         end)
-        
-        -- RGB Display
-        local rgbLabel = Instance.new("TextLabel")
-        rgbLabel.Size = UDim2.new(1, -20, 0, 20)
-        rgbLabel.Position = UDim2.new(0, 10, 0, 140)
-        rgbLabel.BackgroundTransparency = 1
-        rgbLabel.Text = string.format("RGB: %d, %d, %d", math.floor(currentColor.R * 255), math.floor(currentColor.G * 255), math.floor(currentColor.B * 255))
-        rgbLabel.Font = CONFIG.FontMedium
-        rgbLabel.TextSize = 8
-        rgbLabel.TextColor3 = CONFIG.Text
-        rgbLabel.TextXAlignment = Enum.TextXAlignment.Center
-        rgbLabel.ZIndex = 1000
-        rgbLabel.Parent = PickerPopup
-        
-        -- Update RGB label when color changes
-        local function updateRGBLabel()
-            rgbLabel.Text = string.format("RGB: %d, %d, %d", math.floor(currentColor.R * 255), math.floor(currentColor.G * 255), math.floor(currentColor.B * 255))
-        end
-        
-        -- Override callback to update label
-        local originalCallback = callback
-        callback = function(color)
-            updateRGBLabel()
-            if originalCallback then originalCallback(color) end
-        end
         
         -- Close button
         local closeBtn = Instance.new("TextButton")
@@ -670,7 +721,7 @@ UIS.InputEnded:Connect(function(input)
 end)
 
 --========================
--- MOBILE TOGGLE & LOCK BUTTONS (Positioned lower)
+-- MOBILE TOGGLE & LOCK BUTTONS
 --========================
 if isMobile then
     local isUnlocked = false
@@ -678,7 +729,7 @@ if isMobile then
     -- Toggle UI Button
     local ToggleBtn = Instance.new("TextButton")
     ToggleBtn.Size = UDim2.new(0, 88, 0, 30)
-    ToggleBtn.Position = UDim2.new(0, 10, 0, 150) -- Moved down
+    ToggleBtn.Position = UDim2.new(0, 10, 0, 150)
     ToggleBtn.BackgroundColor3 = CONFIG.Accent
     ToggleBtn.BorderSizePixel = 0
     ToggleBtn.Text = "Toggle UI"
@@ -696,7 +747,7 @@ if isMobile then
     -- Lock/Unlock UI Button
     local LockBtn = Instance.new("TextButton")
     LockBtn.Size = UDim2.new(0, 88, 0, 30)
-    LockBtn.Position = UDim2.new(0, 10, 0, 190) -- Moved down
+    LockBtn.Position = UDim2.new(0, 10, 0, 190)
     LockBtn.BackgroundColor3 = CONFIG.Surface
     LockBtn.BorderSizePixel = 0
     LockBtn.Text = "Unlock UI"
