@@ -148,6 +148,7 @@ local function SaveSettings()
     end)
 end
 
+-- Load saved data
 local savedData = LoadSettings()
 if savedData then
     for k, v in pairs(SaveData) do
@@ -579,16 +580,24 @@ local function CreateToggle(tabName, name, default, callback, side, collapsible)
         collapsibleContainer = CreateCollapsibleContainer(mainContainer, state)
     end
     
+    -- Function to update button visuals
+    local function updateVisuals()
+        if state then
+            button.BackgroundColor3 = CONFIG.ToggleOn
+            knob.Position = UDim2.new(0, 17, 0, 3)
+        else
+            button.BackgroundColor3 = CONFIG.ToggleOff
+            knob.Position = UDim2.new(0, 3, 0, 3)
+        end
+    end
+    
+    -- Set initial visuals
+    updateVisuals()
+    
     button.MouseButton1Click:Connect(function()
         state = not state
         
-        if state then
-            tween(button, 0.2, {BackgroundColor3 = CONFIG.ToggleOn}):Play()
-            tween(knob, 0.2, {Position = UDim2.new(0, 17, 0, 3)}):Play()
-        else
-            tween(button, 0.2, {BackgroundColor3 = CONFIG.ToggleOff}):Play()
-            tween(knob, 0.2, {Position = UDim2.new(0, 3, 0, 3)}):Play()
-        end
+        updateVisuals()
         
         if collapsibleContainer then
             collapsibleContainer.setOpen(state)
@@ -619,11 +628,23 @@ local function CreateToggle(tabName, name, default, callback, side, collapsible)
         return {
             toggle = container,
             collapsible = collapsibleContainer,
-            mainContainer = mainContainer
+            mainContainer = mainContainer,
+            setState = function(value)
+                state = value
+                updateVisuals()
+                if collapsibleContainer then
+                    collapsibleContainer.setOpen(value)
+                end
+            end
         }
     end
     
-    return container
+    return {
+        setState = function(value)
+            state = value
+            updateVisuals()
+        end
+    }
 end
 
 local function CreateSliderInCollapsible(collapsible, name, min, max, default, callback)
@@ -1844,7 +1865,7 @@ local function ToggleNoclip(enabled)
 end
 
 --========================
--- ESP SYSTEM (same as before)
+-- ESP SYSTEM
 --========================
 local EspEnabled = false
 local ESPObjects = {}
@@ -2449,7 +2470,7 @@ local function OnAnimationSpeedChange(value)
 end
 
 --========================
--- AIMBOT SYSTEM (Main Tab)
+-- AIMBOT SYSTEM
 --========================
 local fovScreenGui = Instance.new("ScreenGui")
 fovScreenGui.Name = "AimbotFOV"
@@ -2564,20 +2585,6 @@ aimbotFOVFillGrad = aimbotFOV.fillgrad
 aimbotFOVStroke = aimbotFOV.stroke
 aimbotFOVStrokeGrad = aimbotFOV.strokegrad
 
-local function updaimbotoutlinegrad()
-    aimbotFOVStrokeGrad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, aimbotFOVCfg.OutlineColor1),
-        ColorSequenceKeypoint.new(1, aimbotFOVCfg.OutlineColor2),
-    })
-end
-
-local function updaimbotfillgrad()
-    aimbotFOVFillGrad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, aimbotFOVCfg.FilledColor1),
-        ColorSequenceKeypoint.new(1, aimbotFOVCfg.FilledColor2),
-    })
-end
-
 local function worldToScreen(wp, cam)
     cam = cam or Camera
     if not cam or not wp then return nil, false end
@@ -2660,7 +2667,6 @@ local function getAimbotScreenPoint()
     return Vector2.new(loc.X, loc.Y)
 end
 
--- Team check for aimbot
 local function aimbotIsTeammate(player)
     if not aimbot.teamCheck then return false end
     if not player then return false end
@@ -2671,7 +2677,6 @@ local function aimbotIsTeammate(player)
     return false
 end
 
--- Death check (alive check)
 local function aimbotIsAlive(player)
     if not aimbot.aliveCheck then return true end
     if not player then return false end
@@ -2682,7 +2687,6 @@ local function aimbotIsAlive(player)
     return true
 end
 
--- Wall check
 local function aimbotIsVisible(player)
     if not aimbot.wallCheck then return true end
     if not player or not player.Character then return false end
@@ -2704,7 +2708,6 @@ local function aimbotIsVisible(player)
     return rr.Instance:IsDescendantOf(player.Character)
 end
 
--- All checks combined
 local function aimbotIsValidTarget(player)
     if not player then return false end
     if player == Player then return false end
@@ -2715,16 +2718,6 @@ local function aimbotIsValidTarget(player)
     if not char then return false end
     if char:FindFirstChildOfClass("ForceField") then return false end
     return true
-end
-
-local function hitpartfromname(target, partName)
-    local fc = function(n) return target:FindFirstChild(n) end
-    if partName == "Head" then return fc("Head")
-    elseif partName == "HumanoidRootPart" then return fc("HumanoidRootPart")
-    elseif partName == "Torso" then return fc("Torso") or fc("UpperTorso")
-    elseif partName == "UpperTorso" then return fc("UpperTorso")
-    elseif partName == "LowerTorso" then return fc("LowerTorso") end
-    return target:FindFirstChild(partName) or fc("HumanoidRootPart")
 end
 
 local function closesttocursor()
@@ -2818,7 +2811,6 @@ local function stepAimbot(dt)
         return
     end
 
-    -- Re-validate target with all checks
     local targetPlayer = Players:GetPlayerFromCharacter(aimbot.lockedTarget.Parent)
     if targetPlayer then
         if not aimbotIsValidTarget(targetPlayer) then
@@ -2889,8 +2881,7 @@ local function ToggleAimbotFOV(enabled)
 end
 
 local function OnAimbotTargetPartChanged(part)
-    aimbot.targetPart = part
-    SaveData.AimbotTargetPart = part
+    aimbot.targetPart = part    SaveData.AimbotTargetPart = part
     SaveSettings()
     clearAimbotLock()
 end
@@ -2940,16 +2931,18 @@ end
 --========================
 -- CREATE UI ELEMENTS WITH COLLAPSIBLE
 --========================
+local toggleReferences = {}
+
 -- Main Tab (Aimbot)
-local aimbotToggle = CreateToggle("Main", "Enable Aimbot", SaveData.AimbotEnabled, ToggleAimbot, "left", true)
-if aimbotToggle.collapsible then
+toggleReferences.AimbotToggle = CreateToggle("Main", "Enable Aimbot", SaveData.AimbotEnabled, ToggleAimbot, "left", true)
+if toggleReferences.AimbotToggle.collapsible then
     CreateToggle("Main", "Show FOV Circle", SaveData.AimbotShowFOV, ToggleAimbotFOV, "left")
-    CreateDropdownInCollapsible(aimbotToggle.collapsible, "Target Part", {
+    CreateDropdownInCollapsible(toggleReferences.AimbotToggle.collapsible, "Target Part", {
         "Head", "HumanoidRootPart", "Torso", "UpperTorso", "LowerTorso"
     }, SaveData.AimbotTargetPart, OnAimbotTargetPartChanged)
-    CreateSliderInCollapsible(aimbotToggle.collapsible, "FOV Radius", 50, 1000, SaveData.AimbotFOVRadius, OnAimbotFOVRadiusChanged)
-    CreateSliderInCollapsible(aimbotToggle.collapsible, "Smoothness", 0.1, 10, SaveData.AimbotSmoothness, OnAimbotSmoothnessChanged)
-    CreateDropdownInCollapsible(aimbotToggle.collapsible, "Aim Curve", {
+    CreateSliderInCollapsible(toggleReferences.AimbotToggle.collapsible, "FOV Radius", 50, 1000, SaveData.AimbotFOVRadius, OnAimbotFOVRadiusChanged)
+    CreateSliderInCollapsible(toggleReferences.AimbotToggle.collapsible, "Smoothness", 0.1, 10, SaveData.AimbotSmoothness, OnAimbotSmoothnessChanged)
+    CreateDropdownInCollapsible(toggleReferences.AimbotToggle.collapsible, "Aim Curve", {
         "Linear", "Instant", "Expo", "EaseIn", "EaseOut", "EaseInOut", "Cubic"
     }, SaveData.AimbotCurve, OnAimbotCurveChanged)
     CreateToggle("Main", "Follow Muzzle", SaveData.AimbotFollowMuzzle, ToggleAimbotFollowMuzzle, "left")
@@ -2959,76 +2952,70 @@ if aimbotToggle.collapsible then
 end
 
 -- Ragebot Tab
-CreateToggle("Ragebot", "Ragebot", SaveData.Ragebot, ToggleWallbang, "left")
+toggleReferences.RagebotToggle = CreateToggle("Ragebot", "Ragebot", SaveData.Ragebot, ToggleWallbang, "left")
 
-local autoShootToggle = CreateToggle("Ragebot", "Auto Shoot", SaveData.AutoShoot, ToggleAutoShoot, "left", true)
-if autoShootToggle.collapsible then
-    CreateSliderInCollapsible(autoShootToggle.collapsible, "Shoot Delay", 0.0005, 5, SaveData.AutoShootDelay, OnAutoShootDelay)
+toggleReferences.AutoShootToggle = CreateToggle("Ragebot", "Auto Shoot", SaveData.AutoShoot, ToggleAutoShoot, "left", true)
+if toggleReferences.AutoShootToggle.collapsible then
+    CreateSliderInCollapsible(toggleReferences.AutoShootToggle.collapsible, "Shoot Delay", 0.0005, 5, SaveData.AutoShootDelay, OnAutoShootDelay)
 end
 
-CreateToggle("Ragebot", "Rapid Fire", SaveData.RapidFire, ToggleRapidFire, "left")
+toggleReferences.RapidFireToggle = CreateToggle("Ragebot", "Rapid Fire", SaveData.RapidFire, ToggleRapidFire, "left")
 
 -- ESP Tab
-local espToggle = CreateToggle("ESP", "Enable ESP", SaveData.Esp, ToggleEsp, "left", true)
-if espToggle.collapsible then
-    -- Box ESP
+toggleReferences.EspToggle = CreateToggle("ESP", "Enable ESP", SaveData.Esp, ToggleEsp, "left", true)
+if toggleReferences.EspToggle.collapsible then
     local boxEsp = CreateToggle("ESP", "Box ESP", SaveData.EspBoxes, ToggleEspBoxes, "left", true)
     if boxEsp.collapsible then
-        boxEsp.collapsible.container.Parent = espToggle.collapsible.container
+        boxEsp.collapsible.container.Parent = toggleReferences.EspToggle.collapsible.container
         CreateColorPickerInCollapsible(boxEsp.collapsible, "Box Color", SaveData.EspBoxColor, OnEspBoxColorChange)
         CreateToggle("ESP", "Box Outline", SaveData.EspBoxOutline, ToggleEspBoxOutline, "left")
     end
     
-    -- Health Bar ESP
     local healthEsp = CreateToggle("ESP", "Health Bar ESP", SaveData.EspHealth, ToggleEspHealth, "left", true)
     if healthEsp.collapsible then
-        healthEsp.collapsible.container.Parent = espToggle.collapsible.container
+        healthEsp.collapsible.container.Parent = toggleReferences.EspToggle.collapsible.container
         CreateColorPickerInCollapsible(healthEsp.collapsible, "Health Color", SaveData.EspHealthColor, OnEspHealthColorChange)
     end
     
-    -- Name ESP
     local nameEsp = CreateToggle("ESP", "Name ESP", SaveData.EspNames, ToggleEspNames, "left", true)
     if nameEsp.collapsible then
-        nameEsp.collapsible.container.Parent = espToggle.collapsible.container
+        nameEsp.collapsible.container.Parent = toggleReferences.EspToggle.collapsible.container
         CreateColorPickerInCollapsible(nameEsp.collapsible, "Name Color", SaveData.EspNameColor, OnEspNameColorChange)
     end
     
-    -- Health Number ESP
     local healthNumEsp = CreateToggle("ESP", "Health Number", SaveData.EspHealthNumber, ToggleEspHealthNumber, "left", true)
     if healthNumEsp.collapsible then
-        healthNumEsp.collapsible.container.Parent = espToggle.collapsible.container
+        healthNumEsp.collapsible.container.Parent = toggleReferences.EspToggle.collapsible.container
         CreateColorPickerInCollapsible(healthNumEsp.collapsible, "Health Number Color", SaveData.EspHealthNumberColor, OnEspHealthNumberColorChange)
     end
     
-    -- Distance ESP
     local distEsp = CreateToggle("ESP", "Distance ESP", SaveData.EspDistance, ToggleEspDistance, "left", true)
     if distEsp.collapsible then
-        distEsp.collapsible.container.Parent = espToggle.collapsible.container
+        distEsp.collapsible.container.Parent = toggleReferences.EspToggle.collapsible.container
         CreateColorPickerInCollapsible(distEsp.collapsible, "Distance Color", SaveData.EspDistanceColor, OnEspDistanceColorChange)
     end
     
-    -- Tracer ESP
     local tracerEsp = CreateToggle("ESP", "Tracer ESP", SaveData.EspTracers, ToggleEspTracers, "left", true)
     if tracerEsp.collapsible then
-        tracerEsp.collapsible.container.Parent = espToggle.collapsible.container
+        tracerEsp.collapsible.container.Parent = toggleReferences.EspToggle.collapsible.container
         CreateColorPickerInCollapsible(tracerEsp.collapsible, "Tracer Color", SaveData.EspTracerColor, OnEspTracerColorChange)
     end
 end
 
 -- Misc Tab
-local flyToggle = CreateToggle("Misc", "Fly", SaveData.Fly, ToggleFly, "left", true)
-if flyToggle.collapsible then
-    CreateSliderInCollapsible(flyToggle.collapsible, "Fly Speed", 1, 500, SaveData.FlySpeed, OnFlySpeed)
+toggleReferences.FlyToggle = CreateToggle("Misc", "Fly", SaveData.Fly, ToggleFly, "left", true)
+if toggleReferences.FlyToggle.collapsible then
+    CreateSliderInCollapsible(toggleReferences.FlyToggle.collapsible, "Fly Speed", 1, 500, SaveData.FlySpeed, OnFlySpeed)
 end
 
-CreateToggle("Misc", "Infinite Jump", SaveData.InfiniteJump, ToggleInfiniteJump, "right")
-CreateToggle("Misc", "Noclip", SaveData.Noclip, ToggleNoclip, "right")
+toggleReferences.InfiniteJumpToggle = CreateToggle("Misc", "Infinite Jump", SaveData.InfiniteJump, ToggleInfiniteJump, "right")
+toggleReferences.NoclipToggle = CreateToggle("Misc", "Noclip", SaveData.Noclip, ToggleNoclip, "right")
 
 -- Animation Tab
-local animToggle = CreateToggle("Animation", "Enable Animation", SaveData.AnimationEnabled, ToggleAnimation, "left", true)
-if animToggle.collapsible then
-    CreateSliderInCollapsible(animToggle.collapsible, "Animation Speed", 1, 500, SaveData.AnimationSpeed, OnAnimationSpeedChange)
-    CreateDropdownInCollapsible(animToggle.collapsible, "Anim Preset", {
+toggleReferences.AnimationToggle = CreateToggle("Animation", "Enable Animation", SaveData.AnimationEnabled, ToggleAnimation, "left", true)
+if toggleReferences.AnimationToggle.collapsible then
+    CreateSliderInCollapsible(toggleReferences.AnimationToggle.collapsible, "Animation Speed", 1, 500, SaveData.AnimationSpeed, OnAnimationSpeedChange)
+    CreateDropdownInCollapsible(toggleReferences.AnimationToggle.collapsible, "Anim Preset", {
         "Underground Glitch", "Orbit", "Tweaking", "Kicking Feet",
         "Low Cortisol", "Floss", "Take the L", "Upside Down",
         "Michael Myers Shake", "Headless", "Wall Peek L", "Glitch Through",
@@ -3128,15 +3115,72 @@ end
 --========================
 -- AUTO-ENABLE SAVED FEATURES
 --========================
-if SaveData.AimbotEnabled then ToggleAimbot(true) end
-if SaveData.Ragebot then EnableWallbang() end
-if SaveData.AutoShoot then EnableAutoShoot() end
-if SaveData.RapidFire then EnableRapidFire() end
-if SaveData.Fly then EnableFly() end
-if SaveData.InfiniteJump then EnableInfiniteJump() end
-if SaveData.Noclip then EnableNoclip() end
-if SaveData.Esp then EnableEsp() end
-if SaveData.AnimationEnabled then ToggleAnimation(true) end
+task.spawn(function()
+    task.wait(0.5)
+    
+    if SaveData.AimbotEnabled then
+        ToggleAimbot(true)
+        if toggleReferences.AimbotToggle and toggleReferences.AimbotToggle.setState then
+            toggleReferences.AimbotToggle.setState(true)
+        end
+    end
+    
+    if SaveData.Ragebot then
+        EnableWallbang()
+        if toggleReferences.RagebotToggle and toggleReferences.RagebotToggle.setState then
+            toggleReferences.RagebotToggle.setState(true)
+        end
+    end
+    
+    if SaveData.AutoShoot then
+        EnableAutoShoot()
+        if toggleReferences.AutoShootToggle and toggleReferences.AutoShootToggle.setState then
+            toggleReferences.AutoShootToggle.setState(true)
+        end
+    end
+    
+    if SaveData.RapidFire then
+        EnableRapidFire()
+        if toggleReferences.RapidFireToggle and toggleReferences.RapidFireToggle.setState then
+            toggleReferences.RapidFireToggle.setState(true)
+        end
+    end
+    
+    if SaveData.Fly then
+        EnableFly()
+        if toggleReferences.FlyToggle and toggleReferences.FlyToggle.setState then
+            toggleReferences.FlyToggle.setState(true)
+        end
+    end
+    
+    if SaveData.InfiniteJump then
+        EnableInfiniteJump()
+        if toggleReferences.InfiniteJumpToggle and toggleReferences.InfiniteJumpToggle.setState then
+            toggleReferences.InfiniteJumpToggle.setState(true)
+        end
+    end
+    
+    if SaveData.Noclip then
+        EnableNoclip()
+        if toggleReferences.NoclipToggle and toggleReferences.NoclipToggle.setState then
+            toggleReferences.NoclipToggle.setState(true)
+        end
+    end
+    
+    if SaveData.Esp then
+        EnableEsp()
+        if toggleReferences.EspToggle and toggleReferences.EspToggle.setState then
+            toggleReferences.EspToggle.setState(true)
+        end
+    end
+    
+    if SaveData.AnimationEnabled then
+        ToggleAnimation(true)
+        if toggleReferences.AnimationToggle and toggleReferences.AnimationToggle.setState then
+            toggleReferences.AnimationToggle.setState(true)
+        end
+    end
+end)
 
 -- Restore aimbot settings
 aimbot.targetPart = SaveData.AimbotTargetPart or "Head"
