@@ -110,6 +110,7 @@ local SaveData = {
     AimbotSmoothness = 2,
     AimbotCurve = "Linear",
     AimbotFollowMuzzle = false,
+    AimbotWallCheck = false,
     AimbotOutlineColor1 = Color3.fromRGB(255, 255, 255),
     AimbotOutlineColor2 = Color3.fromRGB(255, 255, 255),
     AimbotFilledColor1 = Color3.fromRGB(255, 255, 255),
@@ -1301,6 +1302,7 @@ local aimbot = {
     smoothness = 2,
     aimCurve = "Linear",
     followMuzzle = false,
+    wallCheck = false,
     lockedTarget = nil,
     smoothCF = nil,
 }
@@ -1482,16 +1484,52 @@ local function getAimbotScreenPoint()
     return Vector2.new(loc.X, loc.Y)
 end
 
-local function isValidTarget(player)
+local function isPlayerAlive(player)
     if not player then return false end
-    if player == Player then return false end
-    if isTeammate(player) then return false end
     local char = player.Character
     if not char then return false end
     local hum = char:FindFirstChildOfClass("Humanoid")
     if not hum or hum.Health <= 0 then return false end
+    return true
+end
+
+local function isValidTarget(player)
+    if not player then return false end
+    if player == Player then return false end
+    if isTeammate(player) then return false end
+    
+    -- Death check
+    if not isPlayerAlive(player) then return false end
+    
+    local char = player.Character
+    if not char then return false end
     if char:FindFirstChildOfClass("ForceField") then return false end
     return true
+end
+
+local function hasWallBetween(origin, target)
+    if not aimbot.wallCheck then return false end
+    
+    local raycastParams = RaycastParams.new()
+    raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+    raycastParams.FilterDescendantsInstances = {Player.Character, Camera}
+    
+    -- Add all players to ignore
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr.Character then
+            table.insert(raycastParams.FilterDescendantsInstances, plr.Character)
+        end
+    end
+    
+    local direction = target - origin
+    local distance = direction.Magnitude
+    local raycastResult = workspace:Raycast(origin, direction.Unit * distance, raycastParams)
+    
+    if raycastResult then
+        return true -- Wall detected
+    end
+    
+    return false -- No wall
 end
 
 local function closesttocursor()
@@ -1499,6 +1537,9 @@ local function closesttocursor()
     local mp = getAimbotScreenPoint()
     if not mp then return nil end
     local cam = Camera
+    
+    local cameraPos = cam.CFrame.Position
+    
     for _, p in ipairs(Players:GetPlayers()) do
         if p ~= Player and p.Character and isValidTarget(p) then
             local part = p.Character:FindFirstChild(aimbot.targetPart)
@@ -1509,8 +1550,16 @@ local function closesttocursor()
                     local dy = scr.Y - mp.Y
                     local dist = math.sqrt(dx * dx + dy * dy)
                     if dist < bestDist then
-                        bestDist = dist
-                        best = part
+                        -- Wall check
+                        if aimbot.wallCheck then
+                            if not hasWallBetween(cameraPos, part.Position) then
+                                bestDist = dist
+                                best = part
+                            end
+                        else
+                            bestDist = dist
+                            best = part
+                        end
                     end
                 end
             end
@@ -1583,6 +1632,22 @@ local function stepAimbot(dt)
     if not aimbot.lockedTarget.Parent or not aimbot.lockedTarget:IsDescendantOf(workspace) then
         clearAimbotLock()
         return
+    end
+    
+    -- Death check for locked target
+    local lockedPlayer = Players:GetPlayerFromCharacter(aimbot.lockedTarget.Parent)
+    if lockedPlayer and not isPlayerAlive(lockedPlayer) then
+        clearAimbotLock()
+        return
+    end
+    
+    -- Wall check for locked target
+    if aimbot.wallCheck then
+        local camPos = cam.CFrame.Position
+        if hasWallBetween(camPos, aimbot.lockedTarget.Position) then
+            clearAimbotLock()
+            return
+        end
     end
 
     local myChar = Player.Character
@@ -1658,6 +1723,11 @@ end
 local function OnAimbotShowFov(enabled)
     aimbot.showFov = enabled
     updaimbot()
+end
+
+local function OnAimbotWallCheck(enabled)
+    aimbot.wallCheck = enabled
+    aimbot.lockedTarget = nil
 end
 
 --========================
@@ -1878,6 +1948,9 @@ local function getClosestEnemy()
         if plr ~= Player then
             if isTeammate(plr) then continue end
             
+            -- Death check
+            if not isPlayerAlive(plr) then continue end
+            
             local char = plr.Character
             if char then
                 local hum = char:FindFirstChildOfClass("Humanoid")
@@ -1915,19 +1988,9 @@ local function getWeapon()
     return nil
 end
 
-local function isPlayerAlive()
-    local char = Player.Character
-    if not char then return false end
-    
-    local hum = char:FindFirstChildOfClass("Humanoid")
-    if not hum or hum.Health <= 0 then return false end
-    
-    return true
-end
-
 local function fire()
     if not AutoShootEnabled then return end
-    if not isPlayerAlive() then return end
+    if not isPlayerAlive(Player) then return end
     
     local weap = getWeapon()
     if weap and isRestricted(weap) then return end
@@ -1944,6 +2007,9 @@ local function fire()
     
     local targetPlayer = Players:GetPlayerFromCharacter(target)
     if not targetPlayer or isTeammate(targetPlayer) then return end
+    
+    -- Death check
+    if not isPlayerAlive(targetPlayer) then return end
     
     pcall(function()
         local fighterController = require(Player.PlayerScripts.Controllers.FighterController)
@@ -2842,6 +2908,7 @@ if aimbotToggle.collapsible then
     
     CreateToggle("Main", "Show FOV Circle", SaveData.AimbotShowFov, OnAimbotShowFov, "left")
     CreateToggle("Main", "Follow Muzzle", SaveData.AimbotFollowMuzzle, OnAimbotFollowMuzzle, "right")
+    CreateToggle("Main", "Wall Check", SaveData.AimbotWallCheck, OnAimbotWallCheck, "left")
 end
 
 -- Ragebot Tab
@@ -3014,7 +3081,10 @@ end
 --========================
 -- AUTO-ENABLE SAVED FEATURES
 --========================
-if SaveData.AimbotEnabled then ToggleAimbot(true) end
+if SaveData.AimbotEnabled then 
+    ToggleAimbot(true)
+    aimbot.wallCheck = SaveData.AimbotWallCheck
+end
 if SaveData.Ragebot then EnableWallbang() end
 if SaveData.AutoShoot then EnableAutoShoot() end
 if SaveData.RapidFire then EnableRapidFire() end
@@ -3032,4 +3102,4 @@ SetupAutoExecute()
 -- Open UI on first load
 OpenUI()
 
-print("[Oishi Hub V1.03] Loaded! Main Tab with Instance Aimbot added!")
+print("[Oishi Hub V1.03] Loaded! Main Tab with Wall Check and Death Check added!")
