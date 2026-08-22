@@ -1,4 +1,4 @@
--- Oishi Hub v1.03 - Private UI (LocalScript) with Auto-Execute
+-- Oishi Hub v1.02 - Private UI (LocalScript) with Auto-Execute
 -- COLLAPSIBLE: Settings push content down inside UI
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
@@ -101,20 +101,16 @@ local SaveData = {
     AutoCollect = false,
     AutoQueueEnabled = false,
     AutoQueueMode = "1v1",
-    -- Aimbot Settings
     AimbotEnabled = false,
-    AimbotKeyMode = "toggle",
-    AimbotShowFov = false,
+    AimbotShowFOV = false,
     AimbotTargetPart = "Head",
-    AimbotFovRadius = 500,
+    AimbotFOVRadius = 500,
     AimbotSmoothness = 2,
     AimbotCurve = "Linear",
     AimbotFollowMuzzle = false,
+    AimbotTeamCheck = true,
+    AimbotAliveCheck = true,
     AimbotWallCheck = false,
-    AimbotOutlineColor1 = Color3.fromRGB(255, 255, 255),
-    AimbotOutlineColor2 = Color3.fromRGB(255, 255, 255),
-    AimbotFilledColor1 = Color3.fromRGB(255, 255, 255),
-    AimbotFilledColor2 = Color3.fromRGB(0, 0, 0),
 }
 
 local function LoadSettings()
@@ -250,7 +246,7 @@ local HeaderTitle = Instance.new("TextLabel")
 HeaderTitle.Size = UDim2.new(0, 200, 0, 20)
 HeaderTitle.Position = UDim2.new(0, 10, 0, 5)
 HeaderTitle.BackgroundTransparency = 1
-HeaderTitle.Text = "OISHI HUB V1.03"
+HeaderTitle.Text = "OISHI HUB V1.02"
 HeaderTitle.Font = CONFIG.Font
 HeaderTitle.TextSize = 12
 HeaderTitle.TextColor3 = CONFIG.Accent
@@ -1290,447 +1286,6 @@ local function CreateDropdownInCollapsible(collapsible, name, options, default, 
 end
 
 --========================
--- INSTANCE AIMBOT SYSTEM
---========================
-local aimbot = {
-    enabled = false,
-    masterEnabled = false,
-    keyMode = "toggle",
-    showFov = false,
-    targetPart = "Head",
-    fovRadius = 500,
-    smoothness = 2,
-    aimCurve = "Linear",
-    followMuzzle = false,
-    wallCheck = false,
-    lockedTarget = nil,
-    smoothCF = nil,
-}
-
-local aimbotFOVCfg = {
-    OutlineColor1 = Color3.fromRGB(255, 255, 255),
-    OutlineColor2 = Color3.fromRGB(255, 255, 255),
-    OutlineRotation = 0,
-    OutlineThickness = 1.5,
-    OutlineTransparency = 0,
-    FilledEnabled = false,
-    FilledColor1 = Color3.fromRGB(255, 255, 255),
-    FilledColor2 = Color3.fromRGB(0, 0, 0),
-    FilledRotation = 0,
-    FilledTransparency = 0.7,
-    FilledAnimated = false,
-    FilledSpeed = 1,
-    SpinOn = false,
-    SpinSpd = 1,
-}
-
--- FOV Drawing
-local fovScreenGui = Instance.new("ScreenGui")
-fovScreenGui.Name = "AimbotFOV"
-fovScreenGui.ResetOnSpawn = false
-fovScreenGui.IgnoreGuiInset = true
-fovScreenGui.DisplayOrder = 999998
-fovScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-fovScreenGui.Parent = PlayerGui
-
-local aimbotFOVContainer = Instance.new("Frame")
-aimbotFOVContainer.Name = "AimbotFOVCircle"
-aimbotFOVContainer.BackgroundTransparency = 1
-aimbotFOVContainer.BorderSizePixel = 0
-aimbotFOVContainer.Visible = false
-aimbotFOVContainer.ZIndex = 1
-aimbotFOVContainer.Parent = fovScreenGui
-
-local aimbotFOVFill = Instance.new("Frame")
-aimbotFOVFill.Size = UDim2.new(1, 0, 1, 0)
-aimbotFOVFill.BackgroundColor3 = Color3.new(1, 1, 1)
-aimbotFOVFill.BackgroundTransparency = aimbotFOVCfg.FilledTransparency
-aimbotFOVFill.BorderSizePixel = 0
-aimbotFOVFill.Visible = aimbotFOVCfg.FilledEnabled
-aimbotFOVFill.ZIndex = 2
-aimbotFOVFill.Parent = aimbotFOVContainer
-
-local aimbotFOVFillCorner = Instance.new("UICorner")
-aimbotFOVFillCorner.CornerRadius = UDim.new(1, 0)
-aimbotFOVFillCorner.Parent = aimbotFOVFill
-
-local aimbotFOVFillGrad = Instance.new("UIGradient")
-aimbotFOVFillGrad.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, aimbotFOVCfg.FilledColor1),
-    ColorSequenceKeypoint.new(1, aimbotFOVCfg.FilledColor2),
-})
-aimbotFOVFillGrad.Rotation = aimbotFOVCfg.FilledRotation
-aimbotFOVFillGrad.Parent = aimbotFOVFill
-
-local aimbotFOVOutline = Instance.new("Frame")
-aimbotFOVOutline.Size = UDim2.new(1, 0, 1, 0)
-aimbotFOVOutline.BackgroundTransparency = 1
-aimbotFOVOutline.BorderSizePixel = 0
-aimbotFOVOutline.ZIndex = 3
-aimbotFOVOutline.Parent = aimbotFOVContainer
-
-local aimbotFOVOutlineCorner = Instance.new("UICorner")
-aimbotFOVOutlineCorner.CornerRadius = UDim.new(1, 0)
-aimbotFOVOutlineCorner.Parent = aimbotFOVOutline
-
-local aimbotFOVStroke = Instance.new("UIStroke")
-aimbotFOVStroke.Color = Color3.new(1, 1, 1)
-aimbotFOVStroke.Thickness = aimbotFOVCfg.OutlineThickness
-aimbotFOVStroke.Transparency = aimbotFOVCfg.OutlineTransparency
-aimbotFOVStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-aimbotFOVStroke.Parent = aimbotFOVOutline
-
-local aimbotFOVStrokeGrad = Instance.new("UIGradient")
-aimbotFOVStrokeGrad.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, aimbotFOVCfg.OutlineColor1),
-    ColorSequenceKeypoint.new(1, aimbotFOVCfg.OutlineColor2),
-})
-aimbotFOVStrokeGrad.Rotation = aimbotFOVCfg.OutlineRotation
-aimbotFOVStrokeGrad.Parent = aimbotFOVStroke
-
-local function updaimbotoutlinegrad()
-    aimbotFOVStrokeGrad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, aimbotFOVCfg.OutlineColor1),
-        ColorSequenceKeypoint.new(1, aimbotFOVCfg.OutlineColor2),
-    })
-end
-
-local function updaimbotfillgrad()
-    aimbotFOVFillGrad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, aimbotFOVCfg.FilledColor1),
-        ColorSequenceKeypoint.new(1, aimbotFOVCfg.FilledColor2),
-    })
-end
-
-local function worldToScreen(wp, cam)
-    cam = cam or Camera
-    if not cam or not wp then return nil, false end
-    local v, on = cam:WorldToViewportPoint(wp)
-    if not on or v.Z <= 0 then return v, false end
-    return v, true
-end
-
-local function screenCenter(cam)
-    cam = cam or Camera
-    if not cam then return Vector2.zero end
-    local vs = cam.ViewportSize
-    return Vector2.new(vs.X * 0.5, vs.Y * 0.5)
-end
-
-local function screenpos2(wp)
-    if not wp then return nil end
-    local sp, ok = worldToScreen(wp, Camera)
-    if not ok then return nil end
-    return Vector2.new(sp.X, sp.Y)
-end
-
-local function findShotMuzzlePosition()
-    local myChar = Player.Character
-    if not myChar then
-        local cam = workspace.CurrentCamera
-        return cam and (cam.CFrame.Position + cam.CFrame.LookVector * 4) or Vector3.zero
-    end
-    local vm = Workspace:FindFirstChild("ViewModels")
-    if vm then
-        local fp = vm:FindFirstChild("FirstPerson")
-        if fp then
-            for _, m in ipairs(fp:GetChildren()) do
-                if m:IsA("Model") then
-                    local iv = m:FindFirstChild("ItemVisual")
-                    if iv then
-                        local b = iv:FindFirstChild("Body")
-                        if b then
-                            local bp = b:FindFirstChild("BodyPrimary")
-                            if bp then
-                                local mz = bp:FindFirstChild("_muzzle")
-                                if mz and mz:IsA("Attachment") then return mz.WorldPosition end
-                            end
-                        end
-                    end
-                    local mz = m:FindFirstChild("Muzzle") or m:FindFirstChild("MuzzleFlash") or m:FindFirstChild("Barrel") or m:FindFirstChild("GunTip")
-                    if mz then
-                        if mz:IsA("Attachment") then return mz.WorldPosition end
-                        if mz:IsA("BasePart") then return mz.Position end
-                    end
-                    for _, p in ipairs(m:GetChildren()) do
-                        if p:IsA("BasePart") then
-                            local pn = p.Name:lower()
-                            if pn:find("tip") or pn:find("barrel") or pn:find("muzzle") then return p.Position end
-                        end
-                    end
-                    local pp = m.PrimaryPart or m:FindFirstChildWhichIsA("BasePart")
-                    if pp then return pp.Position end
-                end
-            end
-        end
-    end
-    local cam = workspace.CurrentCamera
-    if cam then return cam.CFrame.Position + cam.CFrame.LookVector * 4 end
-    local root = myChar:FindFirstChild("HumanoidRootPart")
-    return root and root.Position or Vector3.zero
-end
-
-local function aimbotfovcenter()
-    if aimbot.followMuzzle then
-        local s = screenpos2(findShotMuzzlePosition())
-        if s then return s end
-    end
-    return screenCenter(Camera)
-end
-
-local function getAimbotScreenPoint()
-    if aimbot.followMuzzle then return aimbotfovcenter() end
-    local loc = UIS:GetMouseLocation()
-    return Vector2.new(loc.X, loc.Y)
-end
-
-local function isPlayerAlive(player)
-    if not player then return false end
-    local char = player.Character
-    if not char then return false end
-    local hum = char:FindFirstChildOfClass("Humanoid")
-    if not hum or hum.Health <= 0 then return false end
-    return true
-end
-
-local function isValidTarget(player)
-    if not player then return false end
-    if player == Player then return false end
-    if isTeammate(player) then return false end
-    
-    -- Death check
-    if not isPlayerAlive(player) then return false end
-    
-    local char = player.Character
-    if not char then return false end
-    if char:FindFirstChildOfClass("ForceField") then return false end
-    return true
-end
-
-local function hasWallBetween(origin, target)
-    if not aimbot.wallCheck then return false end
-    
-    local raycastParams = RaycastParams.new()
-    raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
-    raycastParams.FilterDescendantsInstances = {Player.Character, Camera}
-    
-    -- Add all players to ignore
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr.Character then
-            table.insert(raycastParams.FilterDescendantsInstances, plr.Character)
-        end
-    end
-    
-    local direction = target - origin
-    local distance = direction.Magnitude
-    local raycastResult = workspace:Raycast(origin, direction.Unit * distance, raycastParams)
-    
-    if raycastResult then
-        return true -- Wall detected
-    end
-    
-    return false -- No wall
-end
-
-local function closesttocursor()
-    local best, bestDist = nil, aimbot.fovRadius
-    local mp = getAimbotScreenPoint()
-    if not mp then return nil end
-    local cam = Camera
-    
-    local cameraPos = cam.CFrame.Position
-    
-    for _, p in ipairs(Players:GetPlayers()) do
-        if p ~= Player and p.Character and isValidTarget(p) then
-            local part = p.Character:FindFirstChild(aimbot.targetPart)
-            if part and part:IsDescendantOf(workspace) then
-                local scr, on = worldToScreen(part.Position, cam)
-                if on then
-                    local dx = scr.X - mp.X
-                    local dy = scr.Y - mp.Y
-                    local dist = math.sqrt(dx * dx + dy * dy)
-                    if dist < bestDist then
-                        -- Wall check
-                        if aimbot.wallCheck then
-                            if not hasWallBetween(cameraPos, part.Position) then
-                                bestDist = dist
-                                best = part
-                            end
-                        else
-                            bestDist = dist
-                            best = part
-                        end
-                    end
-                end
-            end
-        end
-    end
-    return best
-end
-
-local function getAimbotLerpAlpha(dt)
-    local smoothness = math.clamp(tonumber(aimbot.smoothness) or 2, 0.1, 10)
-    local curve = aimbot.aimCurve or "Linear"
-    local speed = 6 / smoothness
-    if curve == "Instant" then return 1
-    elseif curve == "Expo" then return 1 - math.exp(-(4 / smoothness) * dt)
-    elseif curve == "EaseIn" then local t = math.clamp(speed * dt, 0, 1); return t * t
-    elseif curve == "EaseOut" then local t = math.clamp(speed * dt, 0, 1); return 1 - (1 - t) * (1 - t)
-    elseif curve == "EaseInOut" then local t = math.clamp(speed * dt, 0, 1); if t < 0.5 then return 2 * t * t end; return 1 - ((-2 * t + 2) ^ 2) / 2
-    elseif curve == "Cubic" then local t = math.clamp(speed * dt, 0, 1); return t * t * t
-    end
-    return math.clamp(speed * dt, 0, 1)
-end
-
-local function clearAimbotLock()
-    aimbot.lockedTarget = nil
-    aimbot.smoothCF = nil
-end
-
-local function getUnstretchedCameraCFrame(cam)
-    cam = cam or Camera
-    if not cam then return nil end
-    local cf = cam.CFrame
-    local pos = cf.Position
-    local look = cf.LookVector
-    local right = cf.RightVector
-    local up = right:Cross(look).Unit
-    return CFrame.fromMatrix(pos, right, up, -look)
-end
-
-local camController
-pcall(function()
-    local ctrl = Player.PlayerScripts:WaitForChild("Controllers", 10)
-    local cm = ctrl:FindFirstChild("CameraController")
-    if cm and cm:IsA("ModuleScript") then camController = require(cm) end
-end)
-
-local function updaimbot()
-    aimbotFOVContainer.Visible = aimbot.showFov and aimbot.enabled
-    if not aimbot.enabled then
-        clearAimbotLock()
-        return
-    end
-end
-
-local function stepAimbot(dt)
-    dt = dt or (1 / 240)
-    if not aimbot.enabled then
-        clearAimbotLock()
-        return
-    end
-    local cam = workspace.CurrentCamera
-    if not cam then return end
-    Camera = cam
-
-    if not aimbot.lockedTarget then
-        aimbot.lockedTarget = closesttocursor()
-        aimbot.smoothCF = getUnstretchedCameraCFrame(cam)
-        if not aimbot.lockedTarget then return end
-    end
-
-    if not aimbot.lockedTarget.Parent or not aimbot.lockedTarget:IsDescendantOf(workspace) then
-        clearAimbotLock()
-        return
-    end
-    
-    -- Death check for locked target
-    local lockedPlayer = Players:GetPlayerFromCharacter(aimbot.lockedTarget.Parent)
-    if lockedPlayer and not isPlayerAlive(lockedPlayer) then
-        clearAimbotLock()
-        return
-    end
-    
-    -- Wall check for locked target
-    if aimbot.wallCheck then
-        local camPos = cam.CFrame.Position
-        if hasWallBetween(camPos, aimbot.lockedTarget.Position) then
-            clearAimbotLock()
-            return
-        end
-    end
-
-    local myChar = Player.Character
-    if not myChar then return end
-    local myHead = myChar:FindFirstChild("Head")
-    if not myHead then
-        clearAimbotLock()
-        return
-    end
-    if not camController then return end
-
-    if not aimbot.smoothCF then
-        aimbot.smoothCF = getUnstretchedCameraCFrame(cam)
-    end
-
-    local lookCF = CFrame.lookAt(cam.CFrame.Position, aimbot.lockedTarget.Position)
-    local alpha = getAimbotLerpAlpha(dt)
-    aimbot.smoothCF = aimbot.smoothCF:Lerp(lookCF, alpha)
-
-    if camController and camController.MimicRotation then
-        pcall(function()
-            camController:MimicRotation(aimbot.smoothCF)
-        end)
-    end
-end
-
-RunService:BindToRenderStep("InstanceAimbotUpdate", Enum.RenderPriority.Camera.Value + 1, stepAimbot)
-
-RunService.RenderStepped:Connect(function()
-    if aimbotFOVContainer.Visible then
-        local c = aimbotfovcenter()
-        local r = aimbot.fovRadius
-        aimbotFOVContainer.Size = UDim2.fromOffset(r * 2, r * 2)
-        aimbotFOVContainer.Position = UDim2.fromOffset(c.X - r, c.Y - r)
-        if aimbotFOVCfg.FilledAnimated then
-            aimbotFOVFillGrad.Rotation = math.sin(tick() * aimbotFOVCfg.FilledSpeed) * 180 + aimbotFOVCfg.FilledRotation
-        elseif aimbotFOVCfg.SpinOn then
-            aimbotFOVFillGrad.Rotation = aimbotFOVCfg.FilledRotation + (tick() * aimbotFOVCfg.SpinSpd * 90) % 360
-        end
-        if aimbotFOVCfg.SpinOn then
-            aimbotFOVStrokeGrad.Rotation = aimbotFOVCfg.OutlineRotation + (tick() * aimbotFOVCfg.SpinSpd * 90) % 360
-        end
-    end
-end)
-
-local function ToggleAimbot(enabled)
-    aimbot.enabled = enabled
-    aimbot.masterEnabled = enabled
-    updaimbot()
-end
-
-local function OnAimbotTargetPart(part)
-    aimbot.targetPart = part
-    aimbot.lockedTarget = nil
-end
-
-local function OnAimbotFovRadius(value)
-    aimbot.fovRadius = value
-end
-
-local function OnAimbotSmoothness(value)
-    aimbot.smoothness = value
-end
-
-local function OnAimbotCurve(curve)
-    aimbot.aimCurve = curve
-end
-
-local function OnAimbotFollowMuzzle(enabled)
-    aimbot.followMuzzle = enabled
-end
-
-local function OnAimbotShowFov(enabled)
-    aimbot.showFov = enabled
-    updaimbot()
-end
-
-local function OnAimbotWallCheck(enabled)
-    aimbot.wallCheck = enabled
-    aimbot.lockedTarget = nil
-end
-
---========================
 -- RAGEBOT SYSTEM
 --========================
 local WallbangSystem = nil
@@ -1948,9 +1503,6 @@ local function getClosestEnemy()
         if plr ~= Player then
             if isTeammate(plr) then continue end
             
-            -- Death check
-            if not isPlayerAlive(plr) then continue end
-            
             local char = plr.Character
             if char then
                 local hum = char:FindFirstChildOfClass("Humanoid")
@@ -1988,9 +1540,19 @@ local function getWeapon()
     return nil
 end
 
+local function isPlayerAlive()
+    local char = Player.Character
+    if not char then return false end
+    
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if not hum or hum.Health <= 0 then return false end
+    
+    return true
+end
+
 local function fire()
     if not AutoShootEnabled then return end
-    if not isPlayerAlive(Player) then return end
+    if not isPlayerAlive() then return end
     
     local weap = getWeapon()
     if weap and isRestricted(weap) then return end
@@ -2007,9 +1569,6 @@ local function fire()
     
     local targetPlayer = Players:GetPlayerFromCharacter(target)
     if not targetPlayer or isTeammate(targetPlayer) then return end
-    
-    -- Death check
-    if not isPlayerAlive(targetPlayer) then return end
     
     pcall(function()
         local fighterController = require(Player.PlayerScripts.Controllers.FighterController)
@@ -2285,7 +1844,7 @@ local function ToggleNoclip(enabled)
 end
 
 --========================
--- ESP SYSTEM
+-- ESP SYSTEM (same as before)
 --========================
 local EspEnabled = false
 local ESPObjects = {}
@@ -2890,25 +2449,513 @@ local function OnAnimationSpeedChange(value)
 end
 
 --========================
+-- AIMBOT SYSTEM (Main Tab)
+--========================
+local fovScreenGui = Instance.new("ScreenGui")
+fovScreenGui.Name = "AimbotFOV"
+fovScreenGui.ResetOnSpawn = false
+fovScreenGui.IgnoreGuiInset = true
+fovScreenGui.DisplayOrder = 999998
+fovScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+fovScreenGui.Parent = PlayerGui
+
+local aimbot = {
+    enabled = false,
+    masterEnabled = false,
+    keyMode = "toggle",
+    showFov = false,
+    targetPart = "Head",
+    fovRadius = 500,
+    smoothness = 2,
+    aimCurve = "Linear",
+    followMuzzle = false,
+    lockedTarget = nil,
+    smoothCF = nil,
+    teamCheck = true,
+    aliveCheck = true,
+    wallCheck = false,
+}
+
+local aimbotFOVCfg = {
+    OutlineColor1 = Color3.fromRGB(255, 255, 255),
+    OutlineColor2 = Color3.fromRGB(255, 255, 255),
+    OutlineRotation = 0,
+    OutlineThickness = 1.5,
+    OutlineTransparency = 0,
+    FilledEnabled = false,
+    FilledColor1 = Color3.fromRGB(255, 255, 255),
+    FilledColor2 = Color3.fromRGB(0, 0, 0),
+    FilledRotation = 0,
+    FilledTransparency = 0.7,
+    FilledAnimated = false,
+    FilledSpeed = 1,
+    SpinOn = false,
+    SpinSpd = 1,
+}
+
+local aimbotFOVContainer, aimbotFOVFill, aimbotFOVFillGrad, aimbotFOVStroke, aimbotFOVStrokeGrad
+
+local function buildfov(name, cfg)
+    local container = Instance.new("Frame")
+    container.Name = name
+    container.BackgroundTransparency = 1
+    container.BorderSizePixel = 0
+    container.Visible = false
+    container.Parent = fovScreenGui
+
+    local fill = Instance.new("Frame")
+    fill.Size = UDim2.new(1, 0, 1, 0)
+    fill.BackgroundColor3 = Color3.new(1, 1, 1)
+    fill.BackgroundTransparency = cfg.FilledTransparency
+    fill.BorderSizePixel = 0
+    fill.Visible = false
+    fill.ZIndex = 1
+    fill.Parent = container
+    local fillCorner = Instance.new("UICorner")
+    fillCorner.CornerRadius = UDim.new(1, 0)
+    fillCorner.Parent = fill
+
+    local fillgrad = Instance.new("UIGradient")
+    fillgrad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, cfg.FilledColor1),
+        ColorSequenceKeypoint.new(1, cfg.FilledColor2),
+    })
+    fillgrad.Rotation = cfg.FilledRotation
+    fillgrad.Parent = fill
+
+    local outline = Instance.new("Frame")
+    outline.Size = UDim2.new(1, 0, 1, 0)
+    outline.BackgroundTransparency = 1
+    outline.BorderSizePixel = 0
+    outline.ZIndex = 2
+    outline.Parent = container
+    local outlineCorner = Instance.new("UICorner")
+    outlineCorner.CornerRadius = UDim.new(1, 0)
+    outlineCorner.Parent = outline
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = Color3.new(1, 1, 1)
+    stroke.Thickness = cfg.OutlineThickness
+    stroke.Transparency = cfg.OutlineTransparency
+    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    stroke.Parent = outline
+
+    local strokegrad = Instance.new("UIGradient")
+    strokegrad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, cfg.OutlineColor1),
+        ColorSequenceKeypoint.new(1, cfg.OutlineColor2),
+    })
+    strokegrad.Rotation = cfg.OutlineRotation
+    strokegrad.Parent = stroke
+
+    return {
+        container = container,
+        fill = fill,
+        fillgrad = fillgrad,
+        stroke = stroke,
+        strokegrad = strokegrad,
+    }
+end
+
+local aimbotFOV = buildfov("AimbotFOV", aimbotFOVCfg)
+aimbotFOVContainer = aimbotFOV.container
+aimbotFOVFill = aimbotFOV.fill
+aimbotFOVFillGrad = aimbotFOV.fillgrad
+aimbotFOVStroke = aimbotFOV.stroke
+aimbotFOVStrokeGrad = aimbotFOV.strokegrad
+
+local function updaimbotoutlinegrad()
+    aimbotFOVStrokeGrad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, aimbotFOVCfg.OutlineColor1),
+        ColorSequenceKeypoint.new(1, aimbotFOVCfg.OutlineColor2),
+    })
+end
+
+local function updaimbotfillgrad()
+    aimbotFOVFillGrad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, aimbotFOVCfg.FilledColor1),
+        ColorSequenceKeypoint.new(1, aimbotFOVCfg.FilledColor2),
+    })
+end
+
+local function worldToScreen(wp, cam)
+    cam = cam or Camera
+    if not cam or not wp then return nil, false end
+    local v, on = cam:WorldToViewportPoint(wp)
+    if not on or v.Z <= 0 then return v, false end
+    return v, true
+end
+
+local function screenCenter(cam)
+    cam = cam or Camera
+    if not cam then return Vector2.zero end
+    local vs = cam.ViewportSize
+    return Vector2.new(vs.X * 0.5, vs.Y * 0.5)
+end
+
+local function screenpos2(wp)
+    if not wp then return nil end
+    local sp, ok = worldToScreen(wp, Camera)
+    if not ok then return nil end
+    return Vector2.new(sp.X, sp.Y)
+end
+
+local function findShotMuzzlePosition()
+    local myChar = Player.Character
+    if not myChar then
+        local cam = workspace.CurrentCamera
+        return cam and (cam.CFrame.Position + cam.CFrame.LookVector * 4) or Vector3.zero
+    end
+    local vm = Workspace:FindFirstChild("ViewModels")
+    if vm then
+        local fp = vm:FindFirstChild("FirstPerson")
+        if fp then
+            for _, m in ipairs(fp:GetChildren()) do
+                if m:IsA("Model") then
+                    local iv = m:FindFirstChild("ItemVisual")
+                    if iv then
+                        local b = iv:FindFirstChild("Body")
+                        if b then
+                            local bp = b:FindFirstChild("BodyPrimary")
+                            if bp then
+                                local mz = bp:FindFirstChild("_muzzle")
+                                if mz and mz:IsA("Attachment") then return mz.WorldPosition end
+                            end
+                        end
+                    end
+                    local mz = m:FindFirstChild("Muzzle") or m:FindFirstChild("MuzzleFlash") or m:FindFirstChild("Barrel") or m:FindFirstChild("GunTip")
+                    if mz then
+                        if mz:IsA("Attachment") then return mz.WorldPosition end
+                        if mz:IsA("BasePart") then return mz.Position end
+                    end
+                    for _, p in ipairs(m:GetChildren()) do
+                        if p:IsA("BasePart") then
+                            local pn = p.Name:lower()
+                            if pn:find("tip") or pn:find("barrel") or pn:find("muzzle") then return p.Position end
+                        end
+                    end
+                    local pp = m.PrimaryPart or m:FindFirstChildWhichIsA("BasePart")
+                    if pp then return pp.Position end
+                end
+            end
+        end
+    end
+    local cam = workspace.CurrentCamera
+    if cam then return cam.CFrame.Position + cam.CFrame.LookVector * 4 end
+    local root = myChar:FindFirstChild("HumanoidRootPart")
+    return root and root.Position or Vector3.zero
+end
+
+local function aimbotfovcenter()
+    if aimbot.followMuzzle then
+        local s = screenpos2(findShotMuzzlePosition())
+        if s then return s end
+    end
+    return screenCenter(Camera)
+end
+
+local function getAimbotScreenPoint()
+    if aimbot.followMuzzle then return aimbotfovcenter() end
+    local loc = UIS:GetMouseLocation()
+    return Vector2.new(loc.X, loc.Y)
+end
+
+-- Team check for aimbot
+local function aimbotIsTeammate(player)
+    if not aimbot.teamCheck then return false end
+    if not player then return false end
+    local mt = Player:GetAttribute("TeamID")
+    local tt = player:GetAttribute("TeamID")
+    if mt and tt and mt == tt then return true end
+    if Player.Team and player.Team and Player.Team == player.Team then return true end
+    return false
+end
+
+-- Death check (alive check)
+local function aimbotIsAlive(player)
+    if not aimbot.aliveCheck then return true end
+    if not player then return false end
+    local char = player.Character
+    if not char then return false end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if not hum or hum.Health <= 0 then return false end
+    return true
+end
+
+-- Wall check
+local function aimbotIsVisible(player)
+    if not aimbot.wallCheck then return true end
+    if not player or not player.Character then return false end
+    local targetPart = player.Character:FindFirstChild(aimbot.targetPart)
+    if not targetPart then targetPart = player.Character:FindFirstChild("Head") end
+    if not targetPart then return false end
+    local cp = Camera.CFrame.Position
+    local tp = targetPart.Position
+    local dir = (tp - cp).Unit
+    local dist = (tp - cp).Magnitude
+    local rp = RaycastParams.new()
+    rp.FilterDescendantsInstances = {Player.Character}
+    rp.FilterType = Enum.RaycastFilterType.Blacklist
+    rp.IgnoreWater = true
+    local rr = workspace:Raycast(cp, dir * dist, rp)
+    if not rr then return true end
+    local hm = rr.Instance:FindFirstAncestorOfClass("Model")
+    if hm == player.Character then return true end
+    return rr.Instance:IsDescendantOf(player.Character)
+end
+
+-- All checks combined
+local function aimbotIsValidTarget(player)
+    if not player then return false end
+    if player == Player then return false end
+    if aimbotIsTeammate(player) then return false end
+    if not aimbotIsAlive(player) then return false end
+    if not aimbotIsVisible(player) then return false end
+    local char = player.Character
+    if not char then return false end
+    if char:FindFirstChildOfClass("ForceField") then return false end
+    return true
+end
+
+local function hitpartfromname(target, partName)
+    local fc = function(n) return target:FindFirstChild(n) end
+    if partName == "Head" then return fc("Head")
+    elseif partName == "HumanoidRootPart" then return fc("HumanoidRootPart")
+    elseif partName == "Torso" then return fc("Torso") or fc("UpperTorso")
+    elseif partName == "UpperTorso" then return fc("UpperTorso")
+    elseif partName == "LowerTorso" then return fc("LowerTorso") end
+    return target:FindFirstChild(partName) or fc("HumanoidRootPart")
+end
+
+local function closesttocursor()
+    local best, bestDist = nil, aimbot.fovRadius
+    local mp = getAimbotScreenPoint()
+    if not mp then return nil end
+    local cam = Camera
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= Player and p.Character and aimbotIsValidTarget(p) then
+            local part = p.Character:FindFirstChild(aimbot.targetPart)
+            if part and part:IsDescendantOf(workspace) then
+                local scr, on = worldToScreen(part.Position, cam)
+                if on then
+                    local dx = scr.X - mp.X
+                    local dy = scr.Y - mp.Y
+                    local dist = math.sqrt(dx * dx + dy * dy)
+                    if dist < bestDist then
+                        bestDist = dist
+                        best = part
+                    end
+                end
+            end
+        end
+    end
+    return best
+end
+
+local function getAimbotLerpAlpha(dt)
+    local smoothness = math.clamp(tonumber(aimbot.smoothness) or 2, 0.1, 10)
+    local curve = aimbot.aimCurve or "Linear"
+    local speed = 6 / smoothness
+    if curve == "Instant" then return 1
+    elseif curve == "Expo" then return 1 - math.exp(-(4 / smoothness) * dt)
+    elseif curve == "EaseIn" then local t = math.clamp(speed * dt, 0, 1); return t * t
+    elseif curve == "EaseOut" then local t = math.clamp(speed * dt, 0, 1); return 1 - (1 - t) * (1 - t)
+    elseif curve == "EaseInOut" then local t = math.clamp(speed * dt, 0, 1); if t < 0.5 then return 2 * t * t end; return 1 - ((-2 * t + 2) ^ 2) / 2
+    elseif curve == "Cubic" then local t = math.clamp(speed * dt, 0, 1); return t * t * t
+    end
+    return math.clamp(speed * dt, 0, 1)
+end
+
+local function clearAimbotLock()
+    aimbot.lockedTarget = nil
+    aimbot.smoothCF = nil
+end
+
+local function getUnstretchedCameraCFrame(cam)
+    cam = cam or Camera
+    if not cam then return nil end
+    local cf = cam.CFrame
+    local pos = cf.Position
+    local look = cf.LookVector
+    local right = cf.RightVector
+    local up = right:Cross(look).Unit
+    return CFrame.fromMatrix(pos, right, up, -look)
+end
+
+local camController
+pcall(function()
+    local ctrl = Player.PlayerScripts:WaitForChild("Controllers", 10)
+    local cm = ctrl:FindFirstChild("CameraController")
+    if cm and cm:IsA("ModuleScript") then camController = require(cm) end
+end)
+
+local function updaimbot()
+    aimbotFOVContainer.Visible = aimbot.showFov
+    if not aimbot.enabled then
+        clearAimbotLock()
+        return
+    end
+end
+
+local function stepAimbot(dt)
+    dt = dt or (1 / 240)
+    if not aimbot.enabled then
+        clearAimbotLock()
+        return
+    end
+    local cam = workspace.CurrentCamera
+    if not cam then return end
+    Camera = cam
+
+    if not aimbot.lockedTarget then
+        aimbot.lockedTarget = closesttocursor()
+        aimbot.smoothCF = getUnstretchedCameraCFrame(cam)
+        if not aimbot.lockedTarget then return end
+    end
+
+    if not aimbot.lockedTarget.Parent or not aimbot.lockedTarget:IsDescendantOf(workspace) then
+        clearAimbotLock()
+        return
+    end
+
+    -- Re-validate target with all checks
+    local targetPlayer = Players:GetPlayerFromCharacter(aimbot.lockedTarget.Parent)
+    if targetPlayer then
+        if not aimbotIsValidTarget(targetPlayer) then
+            clearAimbotLock()
+            return
+        end
+    end
+
+    local myChar = Player.Character
+    if not myChar then return end
+    local myHead = myChar:FindFirstChild("Head")
+    if not myHead then
+        clearAimbotLock()
+        return
+    end
+    if not camController then return end
+
+    if not aimbot.smoothCF then
+        aimbot.smoothCF = getUnstretchedCameraCFrame(cam)
+    end
+
+    local lookCF = CFrame.lookAt(cam.CFrame.Position, aimbot.lockedTarget.Position)
+    local alpha = getAimbotLerpAlpha(dt)
+    aimbot.smoothCF = aimbot.smoothCF:Lerp(lookCF, alpha)
+
+    if camController and camController.MimicRotation then
+        pcall(function()
+            camController:MimicRotation(aimbot.smoothCF)
+        end)
+    end
+end
+
+RunService:BindToRenderStep("InstanceAimbotUpdate", Enum.RenderPriority.Camera.Value + 1, stepAimbot)
+
+RunService.RenderStepped:Connect(function()
+    if aimbotFOVContainer.Visible then
+        local c = aimbotfovcenter()
+        local r = aimbot.fovRadius
+        aimbotFOVContainer.Size = UDim2.fromOffset(r * 2, r * 2)
+        aimbotFOVContainer.Position = UDim2.fromOffset(c.X - r, c.Y - r)
+        if aimbotFOVCfg.FilledAnimated then
+            aimbotFOVFillGrad.Rotation = math.sin(tick() * aimbotFOVCfg.FilledSpeed) * 180 + aimbotFOVCfg.FilledRotation
+        elseif aimbotFOVCfg.SpinOn then
+            aimbotFOVFillGrad.Rotation = aimbotFOVCfg.FilledRotation + (tick() * aimbotFOVCfg.SpinSpd * 90) % 360
+        end
+        if aimbotFOVCfg.SpinOn then
+            aimbotFOVStrokeGrad.Rotation = aimbotFOVCfg.OutlineRotation + (tick() * aimbotFOVCfg.SpinSpd * 90) % 360
+        end
+    end
+end)
+
+updaimbot()
+
+local function ToggleAimbot(enabled)
+    aimbot.enabled = enabled
+    SaveData.AimbotEnabled = enabled
+    SaveSettings()
+    if not enabled then
+        clearAimbotLock()
+    end
+end
+
+local function ToggleAimbotFOV(enabled)
+    aimbot.showFov = enabled
+    SaveData.AimbotShowFOV = enabled
+    SaveSettings()
+    aimbotFOVContainer.Visible = enabled
+end
+
+local function OnAimbotTargetPartChanged(part)
+    aimbot.targetPart = part
+    SaveData.AimbotTargetPart = part
+    SaveSettings()
+    clearAimbotLock()
+end
+
+local function OnAimbotFOVRadiusChanged(value)
+    aimbot.fovRadius = value
+    SaveData.AimbotFOVRadius = value
+    SaveSettings()
+end
+
+local function OnAimbotSmoothnessChanged(value)
+    aimbot.smoothness = value
+    SaveData.AimbotSmoothness = value
+    SaveSettings()
+end
+
+local function OnAimbotCurveChanged(curve)
+    aimbot.aimCurve = curve
+    SaveData.AimbotCurve = curve
+    SaveSettings()
+end
+
+local function ToggleAimbotFollowMuzzle(enabled)
+    aimbot.followMuzzle = enabled
+    SaveData.AimbotFollowMuzzle = enabled
+    SaveSettings()
+end
+
+local function ToggleAimbotTeamCheck(enabled)
+    aimbot.teamCheck = enabled
+    SaveData.AimbotTeamCheck = enabled
+    SaveSettings()
+end
+
+local function ToggleAimbotAliveCheck(enabled)
+    aimbot.aliveCheck = enabled
+    SaveData.AimbotAliveCheck = enabled
+    SaveSettings()
+end
+
+local function ToggleAimbotWallCheck(enabled)
+    aimbot.wallCheck = enabled
+    SaveData.AimbotWallCheck = enabled
+    SaveSettings()
+end
+
+--========================
 -- CREATE UI ELEMENTS WITH COLLAPSIBLE
 --========================
 -- Main Tab (Aimbot)
 local aimbotToggle = CreateToggle("Main", "Enable Aimbot", SaveData.AimbotEnabled, ToggleAimbot, "left", true)
 if aimbotToggle.collapsible then
+    CreateToggle("Main", "Show FOV Circle", SaveData.AimbotShowFOV, ToggleAimbotFOV, "left")
     CreateDropdownInCollapsible(aimbotToggle.collapsible, "Target Part", {
         "Head", "HumanoidRootPart", "Torso", "UpperTorso", "LowerTorso"
-    }, SaveData.AimbotTargetPart, OnAimbotTargetPart)
-    
-    CreateSliderInCollapsible(aimbotToggle.collapsible, "FOV Radius", 50, 1000, SaveData.AimbotFovRadius, OnAimbotFovRadius)
-    CreateSliderInCollapsible(aimbotToggle.collapsible, "Smoothness", 0.1, 10, SaveData.AimbotSmoothness, OnAimbotSmoothness)
-    
+    }, SaveData.AimbotTargetPart, OnAimbotTargetPartChanged)
+    CreateSliderInCollapsible(aimbotToggle.collapsible, "FOV Radius", 50, 1000, SaveData.AimbotFOVRadius, OnAimbotFOVRadiusChanged)
+    CreateSliderInCollapsible(aimbotToggle.collapsible, "Smoothness", 0.1, 10, SaveData.AimbotSmoothness, OnAimbotSmoothnessChanged)
     CreateDropdownInCollapsible(aimbotToggle.collapsible, "Aim Curve", {
         "Linear", "Instant", "Expo", "EaseIn", "EaseOut", "EaseInOut", "Cubic"
-    }, SaveData.AimbotCurve, OnAimbotCurve)
-    
-    CreateToggle("Main", "Show FOV Circle", SaveData.AimbotShowFov, OnAimbotShowFov, "left")
-    CreateToggle("Main", "Follow Muzzle", SaveData.AimbotFollowMuzzle, OnAimbotFollowMuzzle, "right")
-    CreateToggle("Main", "Wall Check", SaveData.AimbotWallCheck, OnAimbotWallCheck, "left")
+    }, SaveData.AimbotCurve, OnAimbotCurveChanged)
+    CreateToggle("Main", "Follow Muzzle", SaveData.AimbotFollowMuzzle, ToggleAimbotFollowMuzzle, "left")
+    CreateToggle("Main", "Team Check", SaveData.AimbotTeamCheck, ToggleAimbotTeamCheck, "left")
+    CreateToggle("Main", "Alive Check", SaveData.AimbotAliveCheck, ToggleAimbotAliveCheck, "left")
+    CreateToggle("Main", "Wall Check", SaveData.AimbotWallCheck, ToggleAimbotWallCheck, "left")
 end
 
 -- Ragebot Tab
@@ -3081,10 +3128,7 @@ end
 --========================
 -- AUTO-ENABLE SAVED FEATURES
 --========================
-if SaveData.AimbotEnabled then 
-    ToggleAimbot(true)
-    aimbot.wallCheck = SaveData.AimbotWallCheck
-end
+if SaveData.AimbotEnabled then ToggleAimbot(true) end
 if SaveData.Ragebot then EnableWallbang() end
 if SaveData.AutoShoot then EnableAutoShoot() end
 if SaveData.RapidFire then EnableRapidFire() end
@@ -3094,6 +3138,19 @@ if SaveData.Noclip then EnableNoclip() end
 if SaveData.Esp then EnableEsp() end
 if SaveData.AnimationEnabled then ToggleAnimation(true) end
 
+-- Restore aimbot settings
+aimbot.targetPart = SaveData.AimbotTargetPart or "Head"
+aimbot.fovRadius = SaveData.AimbotFOVRadius or 500
+aimbot.smoothness = SaveData.AimbotSmoothness or 2
+aimbot.aimCurve = SaveData.AimbotCurve or "Linear"
+aimbot.followMuzzle = SaveData.AimbotFollowMuzzle or false
+aimbot.teamCheck = SaveData.AimbotTeamCheck or true
+aimbot.aliveCheck = SaveData.AimbotAliveCheck or true
+aimbot.wallCheck = SaveData.AimbotWallCheck or false
+aimbot.showFov = SaveData.AimbotShowFOV or false
+
+updaimbot()
+
 --========================
 -- SETUP AUTO-EXECUTE
 --========================
@@ -3102,4 +3159,5 @@ SetupAutoExecute()
 -- Open UI on first load
 OpenUI()
 
-print("[Oishi Hub V1.03] Loaded! Main Tab with Wall Check and Death Check added!")
+print("[Oishi Hub V1.02] Loaded! Main tab with Aimbot added! Collapsible UI pushes content down!")
+print("[Instance Aimbot] Loaded with Wall Check + Team Check + Alive Check!")
