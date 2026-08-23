@@ -158,17 +158,6 @@ if savedData then
     end
 end
 
--- Reset all toggles to OFF on load
-SaveData.Ragebot = false
-SaveData.AutoShoot = false
-SaveData.RapidFire = false
-SaveData.Fly = false
-SaveData.InfiniteJump = false
-SaveData.Noclip = false
-SaveData.Esp = false
-SaveData.AnimationEnabled = false
-SaveData.AimbotEnabled = false
-
 local function isTeammate(player)
     if not player then return false end
     local myTeam = Player.Team
@@ -302,7 +291,6 @@ local Tabs = {
     {name = "ESP"},
     {name = "Misc"},
     {name = "Animation"},
-    {name = "Config"},
 }
 
 local currentTab = "Main"
@@ -338,8 +326,8 @@ RightContent.Parent = ContentContainer
 
 for i, tab in ipairs(Tabs) do
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1/6, -1, 0, 22)
-    btn.Position = UDim2.new((i-1) * (1/6), 0.5, 0, 2)
+    btn.Size = UDim2.new(1/5, -1, 0, 22)
+    btn.Position = UDim2.new((i-1) * (1/5), 0.5, 0, 2)
     btn.BackgroundColor3 = tab.name == currentTab and CONFIG.TabActive or CONFIG.TabInactive
     btn.BackgroundTransparency = tab.name == currentTab and 0.3 or 0.5
     btn.BorderSizePixel = 0
@@ -606,20 +594,6 @@ local function CreateToggle(tabName, name, default, callback, side, collapsible)
     -- Set initial visuals
     updateVisuals()
     
-    local toggleComponent = {
-        button = button,
-        setState = function(value)
-            state = value
-            updateVisuals()
-            if collapsibleContainer then
-                collapsibleContainer.setOpen(value)
-            end
-        end,
-        getState = function()
-            return state
-        end
-    }
-    
     button.MouseButton1Click:Connect(function()
         state = not state
         
@@ -651,11 +625,26 @@ local function CreateToggle(tabName, name, default, callback, side, collapsible)
     end)
     
     if collapsible then
-        toggleComponent.collapsible = collapsibleContainer
-        toggleComponent.mainContainer = mainContainer
+        return {
+            toggle = container,
+            collapsible = collapsibleContainer,
+            mainContainer = mainContainer,
+            setState = function(value)
+                state = value
+                updateVisuals()
+                if collapsibleContainer then
+                    collapsibleContainer.setOpen(value)
+                end
+            end
+        }
     end
     
-    return toggleComponent
+    return {
+        setState = function(value)
+            state = value
+            updateVisuals()
+        end
+    }
 end
 
 local function CreateSliderInCollapsible(collapsible, name, min, max, default, callback)
@@ -2892,8 +2881,7 @@ local function ToggleAimbotFOV(enabled)
 end
 
 local function OnAimbotTargetPartChanged(part)
-    aimbot.targetPart = part
-    SaveData.AimbotTargetPart = part
+    aimbot.targetPart = part    SaveData.AimbotTargetPart = part
     SaveSettings()
     clearAimbotLock()
 end
@@ -2946,31 +2934,21 @@ end
 local toggleReferences = {}
 
 -- Main Tab (Aimbot)
-toggleReferences.AimbotToggle = CreateToggle("Main", "Aimbot", SaveData.AimbotEnabled, ToggleAimbot, "left", true)
+toggleReferences.AimbotToggle = CreateToggle("Main", "Enable Aimbot", SaveData.AimbotEnabled, ToggleAimbot, "left", true)
 if toggleReferences.AimbotToggle.collapsible then
-    local showFovToggle = CreateToggle("Main", "Show FOV", SaveData.AimbotShowFOV, ToggleAimbotFOV, "left")
-    showFovToggle.mainContainer.Parent = toggleReferences.AimbotToggle.collapsible.container
-    
-    local wallCheckToggle = CreateToggle("Main", "Wall Check", SaveData.AimbotWallCheck, ToggleAimbotWallCheck, "left")
-    wallCheckToggle.mainContainer.Parent = toggleReferences.AimbotToggle.collapsible.container
-    
-    local aliveCheckToggle = CreateToggle("Main", "Alive Check", SaveData.AimbotAliveCheck, ToggleAimbotAliveCheck, "left")
-    aliveCheckToggle.mainContainer.Parent = toggleReferences.AimbotToggle.collapsible.container
-    
-    local teamCheckToggle = CreateToggle("Main", "Team Check", SaveData.AimbotTeamCheck, ToggleAimbotTeamCheck, "left")
-    teamCheckToggle.mainContainer.Parent = toggleReferences.AimbotToggle.collapsible.container
-    
-    local followMuzzleToggle = CreateToggle("Main", "Follow Muzzle", SaveData.AimbotFollowMuzzle, ToggleAimbotFollowMuzzle, "left")
-    followMuzzleToggle.mainContainer.Parent = toggleReferences.AimbotToggle.collapsible.container
-    
-    CreateSliderInCollapsible(toggleReferences.AimbotToggle.collapsible, "Smoothness", 0.1, 10, SaveData.AimbotSmoothness, OnAimbotSmoothnessChanged)
+    CreateToggle("Main", "Show FOV Circle", SaveData.AimbotShowFOV, ToggleAimbotFOV, "left")
     CreateDropdownInCollapsible(toggleReferences.AimbotToggle.collapsible, "Target Part", {
         "Head", "HumanoidRootPart", "Torso", "UpperTorso", "LowerTorso"
     }, SaveData.AimbotTargetPart, OnAimbotTargetPartChanged)
     CreateSliderInCollapsible(toggleReferences.AimbotToggle.collapsible, "FOV Radius", 50, 1000, SaveData.AimbotFOVRadius, OnAimbotFOVRadiusChanged)
+    CreateSliderInCollapsible(toggleReferences.AimbotToggle.collapsible, "Smoothness", 0.1, 10, SaveData.AimbotSmoothness, OnAimbotSmoothnessChanged)
     CreateDropdownInCollapsible(toggleReferences.AimbotToggle.collapsible, "Aim Curve", {
         "Linear", "Instant", "Expo", "EaseIn", "EaseOut", "EaseInOut", "Cubic"
     }, SaveData.AimbotCurve, OnAimbotCurveChanged)
+    CreateToggle("Main", "Follow Muzzle", SaveData.AimbotFollowMuzzle, ToggleAimbotFollowMuzzle, "left")
+    CreateToggle("Main", "Team Check", SaveData.AimbotTeamCheck, ToggleAimbotTeamCheck, "left")
+    CreateToggle("Main", "Alive Check", SaveData.AimbotAliveCheck, ToggleAimbotAliveCheck, "left")
+    CreateToggle("Main", "Wall Check", SaveData.AimbotWallCheck, ToggleAimbotWallCheck, "left")
 end
 
 -- Ragebot Tab
@@ -2986,37 +2964,40 @@ toggleReferences.RapidFireToggle = CreateToggle("Ragebot", "Rapid Fire", SaveDat
 -- ESP Tab
 toggleReferences.EspToggle = CreateToggle("ESP", "Enable ESP", SaveData.Esp, ToggleEsp, "left", true)
 if toggleReferences.EspToggle.collapsible then
-    local espSettingsContainer = toggleReferences.EspToggle.collapsible.container
-    
     local boxEsp = CreateToggle("ESP", "Box ESP", SaveData.EspBoxes, ToggleEspBoxes, "left", true)
     if boxEsp.collapsible then
-        boxEsp.collapsible.container.Parent = espSettingsContainer
+        boxEsp.collapsible.container.Parent = toggleReferences.EspToggle.collapsible.container
         CreateColorPickerInCollapsible(boxEsp.collapsible, "Box Color", SaveData.EspBoxColor, OnEspBoxColorChange)
-        local boxOutline = CreateToggle("ESP", "Box Outline", SaveData.EspBoxOutline, ToggleEspBoxOutline, "left")
-        boxOutline.mainContainer.Parent = boxEsp.collapsible.container
+        CreateToggle("ESP", "Box Outline", SaveData.EspBoxOutline, ToggleEspBoxOutline, "left")
     end
     
     local healthEsp = CreateToggle("ESP", "Health Bar ESP", SaveData.EspHealth, ToggleEspHealth, "left", true)
     if healthEsp.collapsible then
-        healthEsp.collapsible.container.Parent = espSettingsContainer
+        healthEsp.collapsible.container.Parent = toggleReferences.EspToggle.collapsible.container
         CreateColorPickerInCollapsible(healthEsp.collapsible, "Health Color", SaveData.EspHealthColor, OnEspHealthColorChange)
     end
     
     local nameEsp = CreateToggle("ESP", "Name ESP", SaveData.EspNames, ToggleEspNames, "left", true)
     if nameEsp.collapsible then
-        nameEsp.collapsible.container.Parent = espSettingsContainer
+        nameEsp.collapsible.container.Parent = toggleReferences.EspToggle.collapsible.container
         CreateColorPickerInCollapsible(nameEsp.collapsible, "Name Color", SaveData.EspNameColor, OnEspNameColorChange)
+    end
+    
+    local healthNumEsp = CreateToggle("ESP", "Health Number", SaveData.EspHealthNumber, ToggleEspHealthNumber, "left", true)
+    if healthNumEsp.collapsible then
+        healthNumEsp.collapsible.container.Parent = toggleReferences.EspToggle.collapsible.container
+        CreateColorPickerInCollapsible(healthNumEsp.collapsible, "Health Number Color", SaveData.EspHealthNumberColor, OnEspHealthNumberColorChange)
     end
     
     local distEsp = CreateToggle("ESP", "Distance ESP", SaveData.EspDistance, ToggleEspDistance, "left", true)
     if distEsp.collapsible then
-        distEsp.collapsible.container.Parent = espSettingsContainer
+        distEsp.collapsible.container.Parent = toggleReferences.EspToggle.collapsible.container
         CreateColorPickerInCollapsible(distEsp.collapsible, "Distance Color", SaveData.EspDistanceColor, OnEspDistanceColorChange)
     end
     
     local tracerEsp = CreateToggle("ESP", "Tracer ESP", SaveData.EspTracers, ToggleEspTracers, "left", true)
     if tracerEsp.collapsible then
-        tracerEsp.collapsible.container.Parent = espSettingsContainer
+        tracerEsp.collapsible.container.Parent = toggleReferences.EspToggle.collapsible.container
         CreateColorPickerInCollapsible(tracerEsp.collapsible, "Tracer Color", SaveData.EspTracerColor, OnEspTracerColorChange)
     end
 end
@@ -3041,164 +3022,6 @@ if toggleReferences.AnimationToggle.collapsible then
         "Spin",
     }, SaveData.AnimationPreset, OnAnimationPresetChanged)
 end
-
--- Config Tab
-local function CreateConfigButton(tabName, name, callback, side)
-    local content = TabContents[tabName]
-    if not content then return end
-    
-    local targetScroll = side == "right" and content.rightScroll or content.leftScroll
-    local targetLayout = side == "right" and content.rightLayout or content.leftLayout
-    
-    local container = Instance.new("Frame")
-    container.Size = UDim2.new(1, 0, 0, 40)
-    container.BackgroundColor3 = CONFIG.Surface
-    container.BorderSizePixel = 0
-    container.ZIndex = 12
-    container.Parent = targetScroll
-    
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 5)
-    corner.Parent = container
-    
-    local button = Instance.new("TextButton")
-    button.Size = UDim2.new(1, -20, 0, 30)
-    button.Position = UDim2.new(0, 10, 0, 5)
-    button.BackgroundColor3 = CONFIG.SurfaceLight
-    button.BorderSizePixel = 0
-    button.Text = name
-    button.Font = CONFIG.Font
-    button.TextSize = 10
-    button.TextColor3 = CONFIG.Text
-    button.AutoButtonColor = false
-    button.ZIndex = 13
-    button.Parent = container
-    
-    local btnCorner = Instance.new("UICorner")
-    btnCorner.CornerRadius = UDim.new(0, 5)
-    btnCorner.Parent = button
-    
-    button.MouseEnter:Connect(function()
-        tween(button, ANIM.HoverTime, {
-            BackgroundColor3 = CONFIG.HoverSurface
-        }):Play()
-    end)
-    
-    button.MouseLeave:Connect(function()
-        tween(button, ANIM.HoverTime, {
-            BackgroundColor3 = CONFIG.SurfaceLight
-        }):Play()
-    end)
-    
-    button.MouseButton1Click:Connect(function()
-        if callback then callback() end
-    end)
-    
-    return {
-        button = button,
-        container = container
-    }
-end
-
-local function ApplyLegitConfig()
-    -- Disable all first
-    ToggleRagebot(false)
-    ToggleAutoShoot(false)
-    ToggleRapidFire(false)
-    ToggleFly(false)
-    ToggleInfiniteJump(false)
-    ToggleNoclip(false)
-    ToggleAnimation(false)
-    ToggleEsp(false)
-    
-    -- Enable Legit settings
-    -- Main tab
-    ToggleAimbot(true)
-    ToggleAimbotFOV(true)
-    OnAimbotSmoothnessChanged(0)  -- Smoothness to 0
-    ToggleAimbotWallCheck(true)
-    ToggleAimbotAliveCheck(true)
-    ToggleAimbotTeamCheck(true)
-    ToggleAimbotFollowMuzzle(true)
-    
-    -- ESP tab
-    ToggleEsp(true)
-    SaveData.EspBoxes = true
-    SaveData.EspHealth = true
-    SaveData.EspNames = true
-    SaveData.EspDistance = true
-    SaveData.EspTracers = true
-    RefreshESP()
-    
-    -- Update UI states
-    if toggleReferences.AimbotToggle then toggleReferences.AimbotToggle.setState(true) end
-    if toggleReferences.RagebotToggle then toggleReferences.RagebotToggle.setState(false) end
-    if toggleReferences.AutoShootToggle then toggleReferences.AutoShootToggle.setState(false) end
-    if toggleReferences.RapidFireToggle then toggleReferences.RapidFireToggle.setState(false) end
-    if toggleReferences.FlyToggle then toggleReferences.FlyToggle.setState(false) end
-    if toggleReferences.InfiniteJumpToggle then toggleReferences.InfiniteJumpToggle.setState(false) end
-    if toggleReferences.NoclipToggle then toggleReferences.NoclipToggle.setState(false) end
-    if toggleReferences.AnimationToggle then toggleReferences.AnimationToggle.setState(false) end
-    if toggleReferences.EspToggle then toggleReferences.EspToggle.setState(true) end
-    
-    SaveSettings()
-end
-
-local function ApplyRagebotConfig()
-    -- Disable all first
-    ToggleAimbot(false)
-    ToggleRagebot(false)
-    ToggleAutoShoot(false)
-    ToggleRapidFire(false)
-    ToggleFly(false)
-    ToggleInfiniteJump(false)
-    ToggleNoclip(false)
-    ToggleAnimation(false)
-    ToggleEsp(false)
-    
-    -- Enable Ragebot settings
-    -- Ragebot tab
-    ToggleRagebot(true)
-    ToggleAutoShoot(true)
-    OnAutoShootDelay(0)  -- 0 delay
-    ToggleRapidFire(true)
-    
-    -- ESP tab
-    ToggleEsp(true)
-    SaveData.EspBoxes = true
-    SaveData.EspHealth = true
-    SaveData.EspNames = true
-    SaveData.EspDistance = true
-    SaveData.EspTracers = true
-    RefreshESP()
-    
-    -- Misc tab
-    ToggleFly(true)
-    ToggleInfiniteJump(true)
-    ToggleNoclip(true)
-    
-    -- Animation tab
-    SaveData.AnimationPreset = "Spin"
-    SaveData.AnimationSpeed = 500  -- Max speed
-    ToggleAnimation(true)
-    
-    -- Update UI states
-    if toggleReferences.AimbotToggle then toggleReferences.AimbotToggle.setState(false) end
-    if toggleReferences.RagebotToggle then toggleReferences.RagebotToggle.setState(true) end
-    if toggleReferences.AutoShootToggle then toggleReferences.AutoShootToggle.setState(true) end
-    if toggleReferences.RapidFireToggle then toggleReferences.RapidFireToggle.setState(true) end
-    if toggleReferences.FlyToggle then toggleReferences.FlyToggle.setState(true) end
-    if toggleReferences.InfiniteJumpToggle then toggleReferences.InfiniteJumpToggle.setState(true) end
-    if toggleReferences.NoclipToggle then toggleReferences.NoclipToggle.setState(true) end
-    if toggleReferences.AnimationToggle then toggleReferences.AnimationToggle.setState(true) end
-    if toggleReferences.EspToggle then toggleReferences.EspToggle.setState(true) end
-    
-    SaveSettings()
-end
-
--- Create Config tab buttons
-CreateConfigButton("Config", "Legit", ApplyLegitConfig, "left")
-CreateConfigButton("Config", "Ragebot", ApplyRagebotConfig, "right")
 
 -- Update canvas sizes
 task.wait(0.1)
@@ -3290,6 +3113,89 @@ if isPC then
 end
 
 --========================
+-- AUTO-ENABLE SAVED FEATURES
+--========================
+task.spawn(function()
+    task.wait(0.5)
+    
+    if SaveData.AimbotEnabled then
+        ToggleAimbot(true)
+        if toggleReferences.AimbotToggle and toggleReferences.AimbotToggle.setState then
+            toggleReferences.AimbotToggle.setState(true)
+        end
+    end
+    
+    if SaveData.Ragebot then
+        EnableWallbang()
+        if toggleReferences.RagebotToggle and toggleReferences.RagebotToggle.setState then
+            toggleReferences.RagebotToggle.setState(true)
+        end
+    end
+    
+    if SaveData.AutoShoot then
+        EnableAutoShoot()
+        if toggleReferences.AutoShootToggle and toggleReferences.AutoShootToggle.setState then
+            toggleReferences.AutoShootToggle.setState(true)
+        end
+    end
+    
+    if SaveData.RapidFire then
+        EnableRapidFire()
+        if toggleReferences.RapidFireToggle and toggleReferences.RapidFireToggle.setState then
+            toggleReferences.RapidFireToggle.setState(true)
+        end
+    end
+    
+    if SaveData.Fly then
+        EnableFly()
+        if toggleReferences.FlyToggle and toggleReferences.FlyToggle.setState then
+            toggleReferences.FlyToggle.setState(true)
+        end
+    end
+    
+    if SaveData.InfiniteJump then
+        EnableInfiniteJump()
+        if toggleReferences.InfiniteJumpToggle and toggleReferences.InfiniteJumpToggle.setState then
+            toggleReferences.InfiniteJumpToggle.setState(true)
+        end
+    end
+    
+    if SaveData.Noclip then
+        EnableNoclip()
+        if toggleReferences.NoclipToggle and toggleReferences.NoclipToggle.setState then
+            toggleReferences.NoclipToggle.setState(true)
+        end
+    end
+    
+    if SaveData.Esp then
+        EnableEsp()
+        if toggleReferences.EspToggle and toggleReferences.EspToggle.setState then
+            toggleReferences.EspToggle.setState(true)
+        end
+    end
+    
+    if SaveData.AnimationEnabled then
+        ToggleAnimation(true)
+        if toggleReferences.AnimationToggle and toggleReferences.AnimationToggle.setState then
+            toggleReferences.AnimationToggle.setState(true)
+        end
+    end
+end)
+
+-- Restore aimbot settings
+aimbot.targetPart = SaveData.AimbotTargetPart or "Head"
+aimbot.fovRadius = SaveData.AimbotFOVRadius or 500
+aimbot.smoothness = SaveData.AimbotSmoothness or 2
+aimbot.aimCurve = SaveData.AimbotCurve or "Linear"
+aimbot.followMuzzle = SaveData.AimbotFollowMuzzle or false
+aimbot.teamCheck = SaveData.AimbotTeamCheck or true
+aimbot.aliveCheck = SaveData.AimbotAliveCheck or true
+aimbot.wallCheck = SaveData.AimbotWallCheck or false
+aimbot.showFov = SaveData.AimbotShowFOV or false
+
+updaimbot()
+
+--========================
 -- SETUP AUTO-EXECUTE
 --========================
 SetupAutoExecute()
@@ -3297,5 +3203,5 @@ SetupAutoExecute()
 -- Open UI on first load
 OpenUI()
 
-print("[Oishi Hub V1.02] Loaded! Config tab added with Legit & Ragebot presets!")
-print("[Oishi Hub V1.02] All toggles start OFF - Click a config to enable preset!")
+print("[Oishi Hub V1.02] Loaded! Main tab with Aimbot added! Collapsible UI pushes content down!")
+print("[Instance Aimbot] Loaded with Wall Check + Team Check + Alive Check!")
