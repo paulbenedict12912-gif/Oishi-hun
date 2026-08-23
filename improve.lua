@@ -1,4 +1,5 @@
 -- Oishi Hub v1.02 - Private UI (LocalScript) with Auto-Execute
+-- COLLAPSIBLE: Settings push content down inside UI
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
@@ -31,6 +32,9 @@ local function SetupAutoExecute()
     end)
 end
 
+--========================
+-- CONFIGURATION
+--========================
 local CONFIG = {
     Accent = Color3.fromRGB(0, 150, 255),
     Background = Color3.fromRGB(5, 5, 5),
@@ -144,6 +148,7 @@ local function SaveSettings()
     end)
 end
 
+-- Load saved data
 local savedData = LoadSettings()
 if savedData then
     for k, v in pairs(SaveData) do
@@ -153,6 +158,7 @@ if savedData then
     end
 end
 
+-- Reset all toggles to OFF on load
 SaveData.Ragebot = false
 SaveData.AutoShoot = false
 SaveData.RapidFire = false
@@ -178,10 +184,14 @@ local function isTeammate(player)
     return false
 end
 
+-- Check for existing UI
 if PlayerGui:FindFirstChild("OishiHub") then
     PlayerGui.OishiHub:Destroy()
 end
 
+--========================
+-- NEW UI LIBRARY
+--========================
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "OishiHub"
 ScreenGui.ResetOnSpawn = false
@@ -232,6 +242,7 @@ local function CloseUI()
     end)
 end
 
+-- Header
 local Header = Instance.new("Frame")
 Header.Size = UDim2.new(1, 0, 0, 30)
 Header.BackgroundColor3 = CONFIG.Surface
@@ -276,6 +287,7 @@ CloseBtn.MouseButton1Click:Connect(function()
     CloseUI()
 end)
 
+-- Tabs (Full width at top)
 local TabFrame = Instance.new("Frame")
 TabFrame.Size = UDim2.new(1, 0, 0, 26)
 TabFrame.Position = UDim2.new(0, 0, 0, 30)
@@ -297,6 +309,7 @@ local currentTab = "Main"
 local TabButtons = {}
 local TabContents = {}
 
+-- Content container below tabs (full width)
 local ContentContainer = Instance.new("Frame")
 ContentContainer.Size = UDim2.new(1, 0, 1, -56)
 ContentContainer.Position = UDim2.new(0, 0, 0, 56)
@@ -306,6 +319,7 @@ ContentContainer.ClipsDescendants = true
 ContentContainer.ZIndex = 11
 ContentContainer.Parent = Main
 
+-- Left and right content areas
 local LeftContent = Instance.new("Frame")
 LeftContent.Size = UDim2.new(0.5, -1, 1, 0)
 LeftContent.Position = UDim2.new(0, 0, 0, 0)
@@ -424,6 +438,7 @@ for i, tab in ipairs(Tabs) do
     end)
 end
 
+-- Collapsible container (pushes content down)
 local function CreateCollapsibleContainer(parent, initialOpen)
     local container = Instance.new("Frame")
     container.Size = UDim2.new(1, 0, 0, 0)
@@ -465,6 +480,7 @@ local function CreateCollapsibleContainer(parent, initialOpen)
             end)
         end
         
+        -- Update parent scroll
         task.spawn(function()
             local scrollParent = container.Parent
             while scrollParent do
@@ -504,6 +520,7 @@ local function CreateCollapsibleContainer(parent, initialOpen)
     }
 end
 
+-- UI Components
 local function CreateToggle(tabName, name, default, callback, side, collapsible)
     local content = TabContents[tabName]
     if not content then return end
@@ -575,6 +592,7 @@ local function CreateToggle(tabName, name, default, callback, side, collapsible)
         collapsibleContainer = CreateCollapsibleContainer(mainContainer, state)
     end
     
+    -- Function to update button visuals
     local function updateVisuals()
         if state then
             button.BackgroundColor3 = CONFIG.ToggleOn
@@ -585,6 +603,7 @@ local function CreateToggle(tabName, name, default, callback, side, collapsible)
         end
     end
     
+    -- Set initial visuals
     updateVisuals()
     
     local toggleComponent = {
@@ -610,6 +629,7 @@ local function CreateToggle(tabName, name, default, callback, side, collapsible)
             collapsibleContainer.setOpen(state)
         end
         
+        -- Update sizes
         task.spawn(function()
             task.wait(ANIM.CollapseTime)
             mainContainer.Size = UDim2.new(1, 0, 0, mainLayout.AbsoluteContentSize.Y)
@@ -1297,6 +1317,9 @@ local function CreateDropdownInCollapsible(collapsible, name, options, default, 
     return container
 end
 
+--========================
+-- RAGEBOT SYSTEM
+--========================
 local WallbangSystem = nil
 local WallbangEnabled = false
 local desyncShootPos = nil
@@ -1476,6 +1499,9 @@ local function ToggleWallbang(enabled)
     end
 end
 
+--========================
+-- AUTO SHOOT SYSTEM
+--========================
 local AutoShootEnabled = false
 local autoShootConnection = nil
 local lastFire = 0
@@ -1638,6 +1664,9 @@ local function OnAutoShootDelay(value)
     SaveSettings()
 end
 
+--========================
+-- RAPID FIRE SYSTEM
+--========================
 local RapidFireEnabled = false
 
 local function EnableRapidFire()
@@ -1680,6 +1709,9 @@ local function ToggleRapidFire(enabled)
     end
 end
 
+--========================
+-- FLY SYSTEM
+--========================
 local FlyEnabled = false
 local flyAttachment, flyVelocity, flyAlign
 local flyHumanoid, flyRoot
@@ -1762,6 +1794,9 @@ local function OnFlySpeed(value)
     SaveSettings()
 end
 
+--========================
+-- INFINITE JUMP SYSTEM
+--========================
 local InfiniteJumpEnabled = false
 local jumpConnection = nil
 
@@ -1799,6 +1834,9 @@ local function ToggleInfiniteJump(enabled)
     end
 end
 
+--========================
+-- NOCLIP SYSTEM
+--========================
 local NoclipEnabled = false
 local noclipConnection = nil
 
@@ -1837,6 +1875,9 @@ local function ToggleNoclip(enabled)
     end
 end
 
+--========================
+-- ESP SYSTEM
+--========================
 local EspEnabled = false
 local ESPObjects = {}
 local espConnection = nil
@@ -2254,6 +2295,9 @@ Players.PlayerRemoving:Connect(function(player)
     end
 end)
 
+--========================
+-- ANIMATION SYSTEM
+--========================
 local animPlayer = {
     enabled = false,
     animationId = "",
@@ -2436,6 +2480,9 @@ local function OnAnimationSpeedChange(value)
     animPlayer.speed = value
 end
 
+--========================
+-- AIMBOT SYSTEM
+--========================
 local fovScreenGui = Instance.new("ScreenGui")
 fovScreenGui.Name = "AimbotFOV"
 fovScreenGui.ResetOnSpawn = false
@@ -2893,8 +2940,12 @@ local function ToggleAimbotWallCheck(enabled)
     SaveSettings()
 end
 
+--========================
+-- CREATE UI ELEMENTS WITH COLLAPSIBLE
+--========================
 local toggleReferences = {}
 
+-- Main Tab (Aimbot)
 toggleReferences.AimbotToggle = CreateToggle("Main", "Aimbot", SaveData.AimbotEnabled, ToggleAimbot, "left", true)
 if toggleReferences.AimbotToggle.collapsible then
     local showFovToggle = CreateToggle("Main", "Show FOV", SaveData.AimbotShowFOV, ToggleAimbotFOV, "left")
@@ -2922,6 +2973,7 @@ if toggleReferences.AimbotToggle.collapsible then
     }, SaveData.AimbotCurve, OnAimbotCurveChanged)
 end
 
+-- Ragebot Tab
 toggleReferences.RagebotToggle = CreateToggle("Ragebot", "Ragebot", SaveData.Ragebot, ToggleWallbang, "left")
 
 toggleReferences.AutoShootToggle = CreateToggle("Ragebot", "Auto Shoot", SaveData.AutoShoot, ToggleAutoShoot, "left", true)
@@ -2931,6 +2983,7 @@ end
 
 toggleReferences.RapidFireToggle = CreateToggle("Ragebot", "Rapid Fire", SaveData.RapidFire, ToggleRapidFire, "left")
 
+-- ESP Tab
 toggleReferences.EspToggle = CreateToggle("ESP", "Enable ESP", SaveData.Esp, ToggleEsp, "left", true)
 if toggleReferences.EspToggle.collapsible then
     local espSettingsContainer = toggleReferences.EspToggle.collapsible.container
@@ -2968,6 +3021,7 @@ if toggleReferences.EspToggle.collapsible then
     end
 end
 
+-- Misc Tab
 toggleReferences.FlyToggle = CreateToggle("Misc", "Fly", SaveData.Fly, ToggleFly, "left", true)
 if toggleReferences.FlyToggle.collapsible then
     CreateSliderInCollapsible(toggleReferences.FlyToggle.collapsible, "Fly Speed", 1, 500, SaveData.FlySpeed, OnFlySpeed)
@@ -2976,6 +3030,7 @@ end
 toggleReferences.InfiniteJumpToggle = CreateToggle("Misc", "Infinite Jump", SaveData.InfiniteJump, ToggleInfiniteJump, "right")
 toggleReferences.NoclipToggle = CreateToggle("Misc", "Noclip", SaveData.Noclip, ToggleNoclip, "right")
 
+-- Animation Tab
 toggleReferences.AnimationToggle = CreateToggle("Animation", "Enable Animation", SaveData.AnimationEnabled, ToggleAnimation, "left", true)
 if toggleReferences.AnimationToggle.collapsible then
     CreateSliderInCollapsible(toggleReferences.AnimationToggle.collapsible, "Animation Speed", 1, 500, SaveData.AnimationSpeed, OnAnimationSpeedChange)
@@ -2987,6 +3042,7 @@ if toggleReferences.AnimationToggle.collapsible then
     }, SaveData.AnimationPreset, OnAnimationPresetChanged)
 end
 
+-- Config Tab
 local function CreateConfigButton(tabName, name, callback, side)
     local content = TabContents[tabName]
     if not content then return end
@@ -3045,6 +3101,7 @@ local function CreateConfigButton(tabName, name, callback, side)
 end
 
 local function ApplyLegitConfig()
+    -- Disable all first
     ToggleRagebot(false)
     ToggleAutoShoot(false)
     ToggleRapidFire(false)
@@ -3054,14 +3111,17 @@ local function ApplyLegitConfig()
     ToggleAnimation(false)
     ToggleEsp(false)
     
+    -- Enable Legit settings
+    -- Main tab
     ToggleAimbot(true)
     ToggleAimbotFOV(true)
-    OnAimbotSmoothnessChanged(0)
+    OnAimbotSmoothnessChanged(0)  -- Smoothness to 0
     ToggleAimbotWallCheck(true)
     ToggleAimbotAliveCheck(true)
     ToggleAimbotTeamCheck(true)
     ToggleAimbotFollowMuzzle(true)
     
+    -- ESP tab
     ToggleEsp(true)
     SaveData.EspBoxes = true
     SaveData.EspHealth = true
@@ -3070,6 +3130,7 @@ local function ApplyLegitConfig()
     SaveData.EspTracers = true
     RefreshESP()
     
+    -- Update UI states
     if toggleReferences.AimbotToggle then toggleReferences.AimbotToggle.setState(true) end
     if toggleReferences.RagebotToggle then toggleReferences.RagebotToggle.setState(false) end
     if toggleReferences.AutoShootToggle then toggleReferences.AutoShootToggle.setState(false) end
@@ -3084,6 +3145,7 @@ local function ApplyLegitConfig()
 end
 
 local function ApplyRagebotConfig()
+    -- Disable all first
     ToggleAimbot(false)
     ToggleRagebot(false)
     ToggleAutoShoot(false)
@@ -3094,11 +3156,14 @@ local function ApplyRagebotConfig()
     ToggleAnimation(false)
     ToggleEsp(false)
     
+    -- Enable Ragebot settings
+    -- Ragebot tab
     ToggleRagebot(true)
     ToggleAutoShoot(true)
-    OnAutoShootDelay(0)
+    OnAutoShootDelay(0)  -- 0 delay
     ToggleRapidFire(true)
     
+    -- ESP tab
     ToggleEsp(true)
     SaveData.EspBoxes = true
     SaveData.EspHealth = true
@@ -3107,14 +3172,17 @@ local function ApplyRagebotConfig()
     SaveData.EspTracers = true
     RefreshESP()
     
+    -- Misc tab
     ToggleFly(true)
     ToggleInfiniteJump(true)
     ToggleNoclip(true)
     
+    -- Animation tab
     SaveData.AnimationPreset = "Spin"
-    SaveData.AnimationSpeed = 500
+    SaveData.AnimationSpeed = 500  -- Max speed
     ToggleAnimation(true)
     
+    -- Update UI states
     if toggleReferences.AimbotToggle then toggleReferences.AimbotToggle.setState(false) end
     if toggleReferences.RagebotToggle then toggleReferences.RagebotToggle.setState(true) end
     if toggleReferences.AutoShootToggle then toggleReferences.AutoShootToggle.setState(true) end
@@ -3128,15 +3196,20 @@ local function ApplyRagebotConfig()
     SaveSettings()
 end
 
+-- Create Config tab buttons
 CreateConfigButton("Config", "Legit", ApplyLegitConfig, "left")
 CreateConfigButton("Config", "Ragebot", ApplyRagebotConfig, "right")
 
+-- Update canvas sizes
 task.wait(0.1)
 for _, content in pairs(TabContents) do
     content.leftScroll.CanvasSize = UDim2.new(0, 0, 0, content.leftLayout.AbsoluteContentSize.Y + 20)
     content.rightScroll.CanvasSize = UDim2.new(0, 0, 0, content.rightLayout.AbsoluteContentSize.Y + 20)
 end
 
+--========================
+-- HEADER-ONLY DRAG SYSTEM
+--========================
 local dragging = false
 local dragStart
 local startPos
@@ -3169,6 +3242,9 @@ UIS.InputEnded:Connect(function(input)
     end
 end)
 
+--========================
+-- MOBILE CONTROLS
+--========================
 if isMobile then
     local ToggleBtn = Instance.new("TextButton")
     ToggleBtn.Size = UDim2.new(0, 88, 0, 30)
@@ -3196,6 +3272,9 @@ if isMobile then
     end)
 end
 
+--========================
+-- PC RIGHT SHIFT
+--========================
 if isPC then
     UIS.InputBegan:Connect(function(input, gameProcessed)
         if gameProcessed then return end
@@ -3210,6 +3289,13 @@ if isPC then
     end)
 end
 
+--========================
+-- SETUP AUTO-EXECUTE
+--========================
 SetupAutoExecute()
 
+-- Open UI on first load
 OpenUI()
+
+print("[Oishi Hub V1.02] Loaded! Config tab added with Legit & Ragebot presets!")
+print("[Oishi Hub V1.02] All toggles start OFF - Click a config to enable preset!")
