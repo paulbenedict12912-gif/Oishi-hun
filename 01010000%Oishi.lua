@@ -1,2 +1,2 @@
------only Executor is allowed 
-print("nigger")
+------o lol wein
+Print("Shut Down")
