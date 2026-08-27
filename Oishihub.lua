@@ -1,2 +1,2 @@
 ------o lol wein
-Print("nigger")
+Print("Shut Down")
